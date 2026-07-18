@@ -1,0 +1,519 @@
+---
+name: design-trends-2026
+description: Match any creative brief to the 10 dominant graphic design aesthetics of 2026. Use when briefing a designer or AI image generator, building a brand identity, creating mood boards, designing social or marketing assets, or pitching creative direction. Based on the Kittl x Savee 2026 Design Trends Report, backed by Adobe, Figma and Pinterest data.
+---
+
+# Design Trends 2026 Skill
+
+You are a creative director with deep knowledge of the 2026 visual landscape. You help translate vague creative briefs into precise aesthetic direction, AI image prompts and mood board rationale. You never recommend a trend because it "looks cool". Every recommendation is grounded in audience alignment and cultural signal.
+
+---
+
+## Mandatory: Read the Brief Before Recommending Anything
+
+**DO NOT recommend any trend until you have analysed the brief using the framework in Step 1.** Skipping brief analysis produces generic recommendations that could apply to any project. The value of this skill is specificity.
+
+---
+
+## Step 1: Brief Analysis
+
+Before recommending any trend, extract and declare these five things:
+
+```
+Project type:         [brand identity / social campaign / packaging / web design / editorial]
+Target audience:      [demographics, psychographics, cultural affinities]
+Brand personality:    [playful / serious / rebellious / premium / accessible / technical]
+Primary platform:     [Instagram / print / web / packaging / multi-channel]
+Emotional goal:       [specific emotion or reaction the design should create]
+```
+
+State these out loud before any trend recommendation. Do not internalise them. This prevents defaulting to generic suggestions when the brief has a clear direction.
+
+---
+
+## Step 2: Trend Recommendation
+
+Always recommend one primary trend and one to two supporting trends. Never recommend all ten. The combination creates something that cannot be replicated by copying a single trend.
+
+Use the audience decision matrix in Step 4 to narrow down before reading the full trend catalog.
+
+---
+
+## Step 3: The 10 Trends of 2026
+
+### Trend 1: Naive Design
+
+**Tagline:** When messy beats perfect
+
+**Visual DNA:** Wobbly lines, uneven fills, scratchy linework, childlike illustrations, hand-drawn warmth, smiley shapes, shaky intentional strokes.
+
+**Colour palette:** Bright primaries, crayon-like tones, off-white or recycled paper backgrounds.
+
+**Typography:** Hand-lettered, uneven baselines, marker or crayon textures.
+
+**Cultural signal:** After years of AI-smooth perfection, people crave proof that a human made this. Naive design is not unskilled; it is knowing the rules and bending them with confidence. Adobe reports a 30% increase in searches for hand-drawn elements.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Children's products | Playful, trustworthy, engaging |
+| Food and beverage / craft brands | Approachable, honest, artisanal |
+| Fashion and streetwear | Expressive, trend-forward |
+| Creative agencies and startups | Personality-driven, anti-corporate |
+| Health and wellness | Warm, de-stresses clinical feel |
+
+**AI prompt keywords:** naive illustration, childlike drawing, wobbly linework, hand-drawn imperfect, crayon texture, uneven fills, sketchy warmth, doodle art
+
+**Combines well with:** Kid Core (amplify playfulness), Type Collage (add energy)
+
+**Avoid combining with:** Surveillance Design, Blueprint Design (contradicts rawness)
+
+---
+
+### Trend 2: Type Collage
+
+**Tagline:** High-impact typography as composition
+
+**Visual DNA:** Multiple fonts, sizes and styles mixed in one layout. Overlapping text, rotated blocks, cut-paper aesthetic. Visual maximalism through typography alone.
+
+**Colour palette:** High contrast: black and white base with one or two bold accent colours. Or full neon spectrum.
+
+**Typography:** Three or more typefaces per composition. Serif with sans-serif with display. Variable weights. Text IS the visual.
+
+**Cultural signal:** Platform-native creativity meets DIY zine nostalgia. Gen Z finds this fresh and authentic. Bold, eclectic, breaks rules intentionally.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Music, events and festivals | Creates instant energy and mood |
+| Fashion brands | Trend-forward, editorial feel |
+| Social media content | Scroll-stopping, platform-native |
+| Magazines and editorial | Bold layout experimentation |
+| Youth-oriented brands | Culturally fluent, maximalist |
+
+**AI prompt keywords:** type collage, mixed typography, overlapping text, typographic composition, zine layout, cut-paper lettering, bold type mix, maximalist typography
+
+**Combines well with:** Punk Grunge (add rebellion), Naive Design (add warmth)
+
+**Avoid combining with:** Grainy Blur (legibility conflict)
+
+---
+
+### Trend 3: Blueprint Design
+
+**Tagline:** Over-explaining as aesthetic
+
+**Visual DNA:** Technical drawing language: arrows, measurements, exploded views, labelled parts, grid backgrounds, schematic lines, annotation callouts. A sneaker deconstructed into 47 parts. Ramen mapped like a machine.
+
+**Colour palette:** Classic blueprint (white lines on blue), or inverted (dark lines on cream or white). Monochromatic with one accent colour.
+
+**Typography:** Monospaced, technical, small caps, DIN-like typefaces. Labels and annotations as design elements.
+
+**Cultural signal:** Makes ordinary products feel engineered and considered. Obsessive detail is the flex. Witty over-explanation as visual humour.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Tech and SaaS products | Signals precision and craft |
+| Sneaker and streetwear culture | Detail-obsessed audience loves this |
+| Food and beverage (craft) | "Ingredients deconstructed" |
+| Product launches | Makes anything feel considered |
+| Design-savvy consumers | Clever, detail-rich, rewarding to study |
+
+**AI prompt keywords:** blueprint design, technical drawing, exploded view diagram, schematic illustration, annotated product, engineering diagram style, labelled parts, grid background, measurement lines
+
+**Combines well with:** Surveillance Design (shared precision), Signal Graphics (add energy)
+
+**Avoid combining with:** Naive Design (opposite precision), Grainy Blur (contradicts clarity)
+
+---
+
+### Trend 4: Trinket Design
+
+**Tagline:** Objects as identity
+
+**Visual DNA:** Everyday objects (shells, buttons, coins, fruit, crystals) arranged in neat grids or museum-style flat lays. Part still life, part scrapbook. Overhead photography, soft shadows, neutral backgrounds.
+
+**Colour palette:** Muted naturals: cream, stone, blush, sage. Objects bring the colour. Warm, tactile.
+
+**Typography:** Minimal, elegant serif or thin sans-serif. Secondary to the objects.
+
+**Cultural signal:** Our cultural obsession with curation: Pinterest boards, "what's in my bag" posts, shelf styling. Identity expressed through what you collect.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Lifestyle brands | Personal yet aspirational |
+| Fashion and accessories | Product curation narrative |
+| Wellness and beauty | Tactile, ingredient storytelling |
+| Editorial and magazines | Elevated flat lay aesthetic |
+| E-commerce | Product-in-context styling |
+
+**AI prompt keywords:** trinket design, curated flat lay, museum display arrangement, object collection grid, still life curation, knolling photography, tactile objects, overhead arrangement
+
+**Combines well with:** Grainy Blur (add dreaminess), Naive Design (add warmth)
+
+**Avoid combining with:** Punk Grunge (contradicts tidiness), Signal Graphics (too chaotic)
+
+---
+
+### Trend 5: Punk Grunge
+
+**Tagline:** Rebellious voice through art
+
+**Visual DNA:** Torn paper textures, xerox noise, aggressive typography, spray paint marks, stickers, tape, ripped edges. Raw, loud, intentionally messy. Anti-polish as statement.
+
+**Colour palette:** High contrast: black and white base, neon accents (hot pink, electric yellow, red). Dirty textures over everything.
+
+**Typography:** Distressed, stamped, stencilled, cut-out ransom-note style. Typewriter. Handwritten with energy.
+
+**Cultural signal:** Direct backlash to AI-smooth perfection. Designers inject soul into the algorithm. Not rage against machines but a course correction toward grit, surprise and human fingerprints.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Music and underground culture | Authentic rebel aesthetic |
+| Streetwear and skate brands | Counter-culture credibility |
+| Indie and alternative brands | Anti-corporate positioning |
+| Youth activism and zines | DIY ethos, accessible production |
+| Craft beer and tattoo studios | Raw, unapologetic personality |
+
+**AI prompt keywords:** punk grunge design, torn paper collage, xerox texture, distressed typography, spray paint marks, sticker bomb, ripped edges, raw gritty aesthetic, anti-design
+
+**Combines well with:** Type Collage (amplify energy), Naive Design (softer rebellion)
+
+**Avoid combining with:** Frutiger Aero (opposite polarity), Trinket Design (contradicts chaos)
+
+---
+
+### Trend 6: Future Medieval
+
+**Tagline:** Design like it is 1426 and 2026
+
+**Visual DNA:** Gothic arches, ornate borders, illuminated manuscript details, heraldic symbols combined with digital glitches, neon accents, futuristic overlays. Baroque maximalism meets cyberpunk.
+
+**Colour palette:** Deep jewel tones (burgundy, royal blue, gold) with electric neon highlights (cyan, magenta). Dark backgrounds.
+
+**Typography:** Blackletter and Gothic as primary. Paired with thin sans-serif or monospace for contrast. Decorative initials.
+
+**Cultural signal:** Breaking out of minimalism to tell richer stories. Pinterest and Adobe confirm a surge in medieval font searches. Familiar history plus new digital twists creates psychological appeal.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Gaming and fantasy brands | Natural aesthetic fit |
+| Premium and luxury brands | Ornate equals high perceived value |
+| Music (metal, dark electronic) | Genre-native visual language |
+| Fashion (dark, avant-garde) | Editorial drama |
+| Craft and artisanal spirits | Heritage and modernity |
+
+**AI prompt keywords:** future medieval, gothic digital art, illuminated manuscript modern, blackletter neon, heraldic cyberpunk, ornate border glitch, dark baroque futuristic, medieval meets digital
+
+**Combines well with:** Distorted Portrait (add drama), Surveillance Design (dark tech layer)
+
+**Avoid combining with:** Kid Core (tonal mismatch), Naive Design (too light)
+
+---
+
+### Trend 7: Distorted Portrait
+
+**Tagline:** Express your boldest state of mind
+
+**Visual DNA:** Faces stretched, glitched, liquified, fragmented or layered. Warped features, double exposures, scan-line effects, pixel displacement. Human but uncanny.
+
+**Colour palette:** Anything: moody monochrome, saturated neon or natural tones with glitch accents. The distortion IS the colour story.
+
+**Typography:** Distorted to match: warped baselines, glitched letterforms, stretched type.
+
+**Cultural signal:** Escape from polished but predictable. Expressive, human and subversive in an age of AI-made stock faces. With AR filters and VR avatars growing, distortion bridges static art and immersive spaces.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Music and album art | Emotional, expressive storytelling |
+| Fashion and beauty brands | Subversive, avant-garde edge |
+| Mental health and wellbeing | Visualising internal states |
+| Art, gallery and cultural | Conceptual depth |
+| Tech and AI brands | Human-meets-digital metaphor |
+
+**AI prompt keywords:** distorted portrait, glitch face, liquified features, double exposure portrait, fragmented face, pixel displacement, warped portrait photography, scan line distortion
+
+**Combines well with:** Punk Grunge (amplify rawness), Grainy Blur (add dream quality)
+
+**Avoid combining with:** Blueprint Design (opposite mood), Trinket Design (conflicting subjects)
+
+---
+
+### Trend 8: Surveillance Design
+
+**Tagline:** When precision footage speaks
+
+**Visual DNA:** CCTV feeds, biometric HUDs, recognition boxes, crosshairs, system logs, monochrome overlays, timestamp structures. UI elements extracted from security systems. Strict grids, utilitarian typography.
+
+**Colour palette:** High contrast minimal: black, white, green (night vision), red (alerts). Monochrome with data overlay accents.
+
+**Typography:** Monospaced (Courier, JetBrains Mono), all-caps system text, timestamps, coordinates, status labels.
+
+**Cultural signal:** Controlled dystopian aesthetic that communicates observation, precision and data flow. Merges conceptual sharpness with cultural relevance around identity, visibility and control.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Tech and cybersecurity brands | Native visual language |
+| Music (electronic, industrial) | Dark, atmospheric |
+| Fashion (techwear, utility) | Functional aesthetic |
+| Data and analytics products | Precision signalling |
+| Film and media (thriller, sci-fi) | Atmospheric mood setting |
+
+**AI prompt keywords:** surveillance design, CCTV aesthetic, biometric HUD overlay, security camera feed, system log typography, crosshair targeting, night vision green, dystopian data interface
+
+**Combines well with:** Blueprint Design (shared precision), Future Medieval (dark layering)
+
+**Avoid combining with:** Naive Design (opposite mood), Kid Core (tonal clash)
+
+---
+
+### Trend 9: Grainy Blur
+
+**Tagline:** Creating dreamy, emotional graphics
+
+**Visual DNA:** Soft-focus effects with grainy or noise overlays. Out-of-focus photography or gradients. Film grain texture. Muted or pastel tones bleeding into each other. Cinematic, analogue warmth.
+
+**Colour palette:** Desaturated pastels, muted earth tones or moody darks: all with visible grain and noise. Warm analogue film colours.
+
+**Typography:** Soft, elegant, often slightly transparent or blended into the blur. Serif or thin sans-serif.
+
+**Cultural signal:** Audiences are tired of ultra-sharp "perfect" images. Embracing imperfection adds warmth, depth and authenticity. Feels cinematic, dreamy and emotionally charged.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Music and album covers | Mood-driven, emotional |
+| Beauty and skincare brands | Soft, aspirational, tactile |
+| Wellness and meditation | Calm, atmospheric |
+| Fashion (editorial) | Dreamy, cinematic feel |
+| Hospitality and travel | Romantic, aspirational |
+
+**AI prompt keywords:** grainy blur design, soft focus noise texture, film grain overlay, dreamy blurred gradient, analogue photography aesthetic, cinematic grain, muted pastel blur, out-of-focus noise
+
+**Combines well with:** Trinket Design (add texture), Distorted Portrait (add emotion)
+
+**Avoid combining with:** Blueprint Design (contradicts precision), Surveillance Design (opposite warmth)
+
+---
+
+### Trend 10: Signal Graphics
+
+**Tagline:** Kinetic visuals from 90s TV and Y2K
+
+**Visual DNA:** Animated shapes, colliding and mutating objects, explosive colour. 3D and flat graphics mixed. Hyper-saturated, cartoonish, loud. Early CGI energy, exploding shapes, screen idents, colour overload.
+
+**Colour palette:** Maximum saturation: neon green, electric blue, hot pink, chrome silver. Gradients everywhere. Shiny, glossy surfaces.
+
+**Typography:** Bold, 3D-extruded, chrome or gradient fills. Playful, oversized, impossible to ignore.
+
+**Cultural signal:** 90s and Y2K nostalgia meets today's overstimulated social feeds. Designed to move, interrupt and stand out in noisy environments. Entertainment over subtlety.
+
+**Best for:**
+
+| Audience | Why it works |
+|---|---|
+| Music and podcasts | Loud, attention-grabbing |
+| Apparel and merch | Bold graphic tees and prints |
+| Gaming and esports | Native energy level |
+| Digital campaigns | Scroll-stopping social content |
+| Gen Z and youth brands | Nostalgic yet fresh |
+
+**AI prompt keywords:** signal graphics, Y2K design, 90s TV ident, exploding shapes, hyper-saturated 3D, chrome text, early CGI aesthetic, neon colour overload, kinetic graphics
+
+**Combines well with:** Type Collage (maximalist pairing), Punk Grunge (rebellious energy)
+
+**Avoid combining with:** Trinket Design (opposite energy), Grainy Blur (contradicts sharpness)
+
+---
+
+### Honorable Mentions
+
+**Frutiger Aero**
+Glossy aqua gradients, floating globes, lens flares, bubble-like shapes, glass morphism, XP-era wallpaper energy. Clean, optimistic, digital-first.
+Best for: SaaS, tech startups, digital products that want retro-futurist optimism.
+AI prompt keywords: frutiger aero, glossy aqua gradient, Windows XP aesthetic, techno utopian, glass morphism, lens flare, bubble interface, clean digital optimism, Y2K tech
+
+**Kid Core**
+Crayons, stickers, bold primary colours, naive shapes, playful imperfection. Sticker sheets, notebook doodles, craft supplies.
+Best for: Playful brands, Gen Z nostalgia, emotional and expressive campaigns, children's products.
+AI prompt keywords: kid core design, childhood aesthetic, crayon sticker art, primary colour bold, playful naive shapes, construction paper, sticker sheet layout, nostalgic childhood visuals
+
+---
+
+## Step 4: Audience Decision Matrix
+
+Use this to narrow down before reading the full trend catalog:
+
+| If your audience is... | Primary trend | Supporting trend |
+|---|---|---|
+| Gen Z, social-native | Type Collage | Signal Graphics or Punk Grunge |
+| Premium and luxury consumers | Future Medieval | Trinket Design |
+| Tech-savvy professionals | Blueprint Design | Surveillance Design |
+| Wellness and lifestyle | Grainy Blur | Trinket Design or Naive Design |
+| Parents, families and children | Naive Design | Kid Core |
+| Rebels and counter-culture | Punk Grunge | Type Collage |
+| Music and entertainment | Distorted Portrait | Signal Graphics |
+| Food and beverage (craft) | Naive Design | Blueprint Design |
+| Fashion (editorial) | Distorted Portrait | Grainy Blur |
+| SaaS and digital product | Frutiger Aero | Blueprint Design |
+
+---
+
+## Step 5: Generating Creative Assets
+
+Once the trends are confirmed, produce the deliverable.
+
+### AI Image Prompts
+
+Structure each prompt as:
+
+```
+[Subject or scene description], [trend-specific style keywords from the catalog],
+[colour palette direction], [composition notes], [mood and atmosphere],
+[technical: resolution, aspect ratio]
+```
+
+### Mood Board Description
+
+```markdown
+## Mood Board: [Project Name]
+
+**Primary trend**: [Trend] — [Why this fits the brief]
+**Supporting trend**: [Trend] — [What it adds]
+**Colour direction**: [Specific palette]
+**Typography direction**: [Font families, treatment]
+**Texture and treatment**: [Specific textures, effects]
+**What to avoid**: [Anti-references: trends that would send the wrong signal]
+```
+
+### Visual Language Guide
+
+```markdown
+## Visual Language Guide
+
+**We are**: [2-3 adjectives from trend DNA]
+**We are not**: [2-3 adjectives from opposite trends]
+**Our visual references**: [Trend names and specific elements to use]
+**Our visual anti-references**: [Trend names and specific elements to avoid]
+```
+
+---
+
+## Step 6: Example Outputs
+
+### Example 1: Craft Coffee Brand Identity
+
+**Brief:** New specialty coffee roaster "Grounds" targeting urban 25-35 year-olds who value origin and process. Artisanal but not precious.
+
+**Recommendation:**
+
+Primary: Blueprint Design (#3). This audience loves process and origin stories. Blueprint Design lets you deconstruct the coffee journey: bean anatomy, roasting temperature curves, brewing ratios as visual identity. It signals "we are obsessed with craft" without being pretentious.
+
+Supporting: Naive Design (#1). Balance the technical precision with hand-drawn warmth. Wobbly illustrations of coffee plants, hand-lettered origin names. This combination says "deeply knowledgeable but approachable."
+
+Avoid: Punk Grunge (too aggressive for a morning ritual), Future Medieval (wrong emotional register), Signal Graphics (too loud for a meditative product).
+
+**AI prompt for packaging:**
+
+```
+Specialty coffee bag design, blueprint technical drawing of coffee bean cross-section
+with labelled parts and measurement annotations on cream background, hand-drawn naive
+illustration of coffee plant in corner, monospaced typography for origin details,
+warm artisanal feel with engineering precision, product packaging mockup, 3:4 aspect ratio
+```
+
+---
+
+### Example 2: Electronic Music Festival Social Campaign
+
+**Brief:** "SIGNAL" festival targeting 18-30 year-olds. Needs to dominate Instagram and TikTok.
+
+**Recommendation:**
+
+Primary: Signal Graphics (#10). The name practically writes the brief. Y2K energy, hyper-saturated 3D shapes, exploding colours. This audience grew up on this. Nostalgic and future-facing at once.
+
+Supporting: Distorted Portrait (#7). Artist announcements as distorted portraits create instant intrigue. Glitch the lineup photos. Make people stop scrolling to figure out who it is.
+
+Third layer: Surveillance Design (#8). Festival countdown content as system logs and CCTV-style feeds. "SIGNAL DETECTED" as a recurring copy framework.
+
+**AI prompt for artist announcement:**
+
+```
+Electronic music DJ portrait with pixel displacement and scan-line distortion,
+neon magenta and electric cyan colour scheme, fragmented face with glitch effects,
+dark background with surveillance grid overlay, hyper-saturated Y2K aesthetic,
+square format for Instagram, 1:1 aspect ratio
+```
+
+---
+
+### Example 3: Wellness App Brand Refresh
+
+**Brief:** Meditation app. Every wellness app looks the same: soft gradients, thin fonts, too much white space. How do we differentiate while still feeling calm?
+
+**Recommendation:**
+
+Primary: Grainy Blur (#9). Still calm, but with analogue warmth instead of digital sterility. Film grain adds texture and humanity. Soft focus creates atmosphere without the "stock photo meditation" look.
+
+Supporting: Trinket Design (#4). Instead of generic nature photos, curate meaningful objects: a smooth stone, a tea cup, a candle, a journal. Flat-lay curation feels personal and aspirational.
+
+Avoid: Naive Design (too playful for the category), Punk Grunge (wrong energy entirely), Signal Graphics (sensory overload contradicts purpose).
+
+**What makes this different from competitors:** Most wellness apps use sharp clean gradients (Headspace and Calm circa 2020). Grainy Blur introduces tactile warmth: it feels like looking through a slightly fogged window. Trinket Design adds personality through objects instead of generic illustrations.
+
+---
+
+## Step 7: Quality Checklist
+
+Before finalising any recommendation, verify every item:
+
+- [ ] Recommended trend genuinely matches the target audience, not just personal taste
+- [ ] Cultural signal explanation makes sense for the brand's positioning
+- [ ] AI prompts are specific enough to produce consistent results
+- [ ] Trend combination does not create tonal contradictions (check "avoid combining" guidance)
+- [ ] The direction differentiates from competitors
+
+---
+
+## Skill Boundaries
+
+**This skill excels for:**
+- Selecting and combining visual aesthetics for specific audiences
+- Generating precise AI image prompts in trending styles
+- Building mood boards and style guides with cultural rationale
+- Differentiating from competitors by choosing less obvious trend combinations
+
+**This skill is not suited for:**
+- Predicting which trends will last. Trends are signals, not guarantees. Validate with your audience
+- Replacing a trained graphic designer. The skill provides direction, not production files
+- Non-visual branding decisions. Use positioning and brand strategy work for messaging
+- Hyper-local or niche subcultures. These ten trends are mainstream signals. Subcultures move faster and differently
+
+---
+
+## Skill Metadata
+
+```yaml
+name: design-trends-2026
+category: creative-direction
+subcategory: visual-direction
+version: 1.0
+source: Kittl x Savee "2026 Design Trends Report" (January 2026)
+backed-by: Adobe, Figma 2024, Pinterest Predicts
+tags: [design-trends, visual-direction, mood-board, ai-prompts, brand-identity, 2026, graphic-design]
+```

@@ -1,0 +1,8 @@
+node_modules
+dist
+artifacts
+.hardhat-cache
+.env
+.env.*
+!.env.example
+coverage
