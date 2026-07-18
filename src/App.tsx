@@ -14,6 +14,7 @@ const statusClass = ['open', 'pending', 'approved', 'rejected', 'claimed', 'remo
 const fmtDate = (value: bigint) => new Date(Number(value) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 const isPast = (value: bigint) => Number(value) * 1000 < Date.now()
 type Theme = 'dark' | 'light'
+const DISCONNECTED_KEY = 'escrow:wallet-disconnected'
 
 function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => window.localStorage.getItem('escrow-theme') === 'light' ? 'light' : 'dark')
@@ -46,6 +47,7 @@ function useWallet() {
       const chain = await window.ethereum.request({ method: 'eth_chainId' }) as string
       if (!accounts[0]) throw new Error('No wallet account was selected.')
       const connectedAccount = accounts[0] as Address
+      window.localStorage.removeItem(DISCONNECTED_KEY)
       sessionLockRef.current = false
       accountRef.current = connectedAccount
       setAccount(connectedAccount)
@@ -73,6 +75,7 @@ function useWallet() {
     } finally { setSwitching(false) }
   }, [])
   const disconnect = useCallback(() => {
+    window.localStorage.setItem(DISCONNECTED_KEY, '1')
     sessionLockRef.current = true
     accountRef.current = undefined
     setAccount(undefined)
@@ -86,9 +89,10 @@ function useWallet() {
       try {
         const [accounts, chain] = await Promise.all([window.ethereum!.request({ method: 'eth_accounts' }), window.ethereum!.request({ method: 'eth_chainId' })])
         const nextAccount = Array.isArray(accounts) && accounts[0] ? accounts[0] as Address : undefined
+        const manuallyDisconnected = window.localStorage.getItem(DISCONNECTED_KEY) === '1'
         if (sessionLockRef.current) return
-        accountRef.current = nextAccount
-        setAccount(nextAccount)
+        accountRef.current = manuallyDisconnected ? undefined : nextAccount
+        setAccount(manuallyDisconnected ? undefined : nextAccount)
         setChainId(Number.parseInt(chain as string, 16))
       } catch { /* Wallet providers can reject hydration while they are starting. */ } finally { setReady(true) }
     }
@@ -96,6 +100,7 @@ function useWallet() {
     const handleAccountsChanged = (accounts: unknown) => {
       const nextAccount = Array.isArray(accounts) && accounts[0] ? accounts[0] as Address : undefined
       if (sessionLockRef.current) { setAccount(undefined); return }
+      if (window.localStorage.getItem(DISCONNECTED_KEY) === '1') { accountRef.current = undefined; setAccount(undefined); return }
       const previousAccount = accountRef.current
       accountRef.current = nextAccount
       setAccount(nextAccount)
