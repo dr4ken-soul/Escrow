@@ -101,6 +101,17 @@ contract BatchEscrow {
         emit CampaignFunded(campaignId, amount);
     }
 
+    function fundAdditional(uint256 campaignId, uint256 amount) external {
+        Campaign storage campaign = campaigns[campaignId];
+        require(msg.sender == campaign.agency, 'agency only');
+        require(campaign.funded > 0, 'campaign not funded');
+        require(block.timestamp < campaign.deadline, 'campaign closed');
+        require(amount > 0, 'amount required');
+        require(IERC20Minimal(campaign.token).transferFrom(msg.sender, address(this), amount), 'fund transfer failed');
+        campaign.funded += amount;
+        emit CampaignFunded(campaignId, amount);
+    }
+
     function acceptSlot(uint256 campaignId) external returns (uint256 slotId) {
         Campaign storage campaign = campaigns[campaignId];
         require(!campaign.inviteOnly, 'invite code required');
@@ -130,9 +141,18 @@ contract BatchEscrow {
     function setSlotPayout(uint256 campaignId, uint256 slotId, uint256 payout) external {
         Campaign storage campaign = campaigns[campaignId];
         require(msg.sender == campaign.agency, 'agency only');
-        require(payout > 0 && payout <= campaign.payout, 'invalid slot payout');
         Slot storage slot = slots[campaignId][slotId];
         require(slot.status == ProofStatus.None || slot.status == ProofStatus.Rejected, 'payout is locked');
+        require(payout > 0, 'invalid slot payout');
+
+        uint256 reservedByOtherSlots;
+        Slot[] storage campaignSlots = slots[campaignId];
+        for (uint256 i = 0; i < campaignSlots.length; i++) {
+            Slot storage other = campaignSlots[i];
+            if (i != slotId && !other.paid && other.status != ProofStatus.Removed) reservedByOtherSlots += other.payout;
+        }
+        require(campaign.funded >= campaign.paid + campaign.withdrawn + reservedByOtherSlots, 'escrow accounting error');
+        require(payout <= campaign.funded - campaign.paid - campaign.withdrawn - reservedByOtherSlots, 'fund additional USDC first');
         slot.payout = payout;
         emit SlotPayoutUpdated(campaignId, slotId, payout);
     }

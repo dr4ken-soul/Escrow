@@ -30,7 +30,7 @@ Monad Testnet
 
 ## Contract address
 
-`TODO: BatchEscrow address`
+`0x832c0c1bc199f849b68120b83d7e92d3089e6ea3`
 
 `0x534b2f3A21130d7a60830c2Df862319e593943A3`
 
