@@ -13,6 +13,14 @@ const statusNames = ['Open', 'Pending review', 'Approved', 'Rejected', 'Timeout 
 const statusClass = ['open', 'pending', 'approved', 'rejected', 'claimed', 'removed']
 const fmtDate = (value: bigint) => new Date(Number(value) * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 const isPast = (value: bigint) => Number(value) * 1000 < Date.now()
+// A campaign is "ended" when all funds have been accounted for (paid to KOLs + returned to agency)
+// This covers: releaseUnfilled called, withdrawUnused called, or all slots approved+paid
+const getCampaignStatus = (c: Campaign): 'ended' | 'closed' | 'live' => {
+  const locked = c.funded >= c.paid + c.withdrawn ? c.funded - c.paid - c.withdrawn : 0n
+  if (c.funded > 0n && locked === 0n) return 'ended'
+  if (isPast(c.deadline)) return 'closed'
+  return 'live'
+}
 const genInviteCode = () => { const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const bytes = crypto.getRandomValues(new Uint8Array(8)); return Array.from(bytes, b => alphabet[b % alphabet.length]).join('') }
 type Theme = 'dark' | 'light'
 const DISCONNECTED_KEY = 'escrow:wallet-disconnected'
@@ -505,7 +513,21 @@ function Overview({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wal
   )
 }
 
-function CampaignRows({ campaigns }: { campaigns: Campaign[] }) { return <div className="campaign-rows">{campaigns.map(c => <Link to={`/app/campaigns/${c.id}`} className="campaign-row" key={c.id}><div className="campaign-index">/{String(c.id).padStart(2, '0')}</div><div><b>{c.title}</b><span>{Number(c.joined)} / {Number(c.maxSlots)} slots · {formatUnits(c.paid)} paid</span></div><div className="row-right"><span className={`pill ${isPast(c.deadline) ? 'closed' : 'green'}`}>{isPast(c.deadline) ? 'closed' : 'live'}</span><ArrowRight size={15} /></div></Link>)}</div> }
+function CampaignRows({ campaigns }: { campaigns: Campaign[] }) {
+  return <div className="campaign-rows">{campaigns.map(c => {
+    const status = getCampaignStatus(c)
+    return <Link to={`/app/campaigns/${c.id}`} className="campaign-row" key={c.id}>
+      <div className="campaign-index">/{String(c.id).padStart(2, '0')}</div>
+      <div><b>{c.title}</b><span>{Number(c.joined)} / {Number(c.maxSlots)} slots · {formatUnits(c.paid)} paid</span></div>
+      <div className="row-right">
+        <span className={`pill ${status === 'ended' ? 'closed' : status === 'closed' ? 'closed' : 'green'}`} style={status === 'ended' ? { opacity: 0.6 } : {}}>
+          {status}
+        </span>
+        <ArrowRight size={15} />
+      </div>
+    </Link>
+  })}</div>
+}
 function PageHeading({ eyebrow, title, action }: { eyebrow: string; title: string; action?: React.ReactNode }) { return <div className="page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title.replace(/[.!?,]+$/, '')}</h1></div>{action}</div> }
 function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) { return <div className="empty-state"><div className="empty-icon"><ShieldCheck size={19} /></div><h3>{title}</h3><p>{body}</p>{action}</div> }
 
@@ -731,8 +753,9 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
   }
   const requiredBudget = campaign.payout * campaign.maxSlots
   const needsFunding = isAgency && locked < requiredBudget && campaign.maxSlots > campaign.joined
-  // Campaign has been "closed" by Release unfilled budget: maxSlots was set = joined, no new slots possible
-  const isReleasedClosed = isAgency && campaign.funded > 0n && locked === 0n && campaign.maxSlots === campaign.joined && campaign.joined < BigInt(campaign.slots.filter(s => s.status !== 5).length + 1)
+  // isEnded: all funds accounted for (paid out or released back)
+  const isEnded = getCampaignStatus(campaign) === 'ended'
+  const isReleasedClosed = isEnded && campaign.maxSlots === campaign.joined
   const activeSlots = campaign.slots.filter(slot => slot.status !== 5)
   return (
     <>
@@ -746,8 +769,9 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
           <section className="campaign-hero panel">
             <div className="campaign-hero-top">
               <div>
-                <span className="pill green">
-                  <span className="status-dot" /> {isPast(campaign.deadline) ? 'closed' : campaign.inviteOnly ? 'private campaign' : 'public campaign'}
+                <span className={`pill ${(() => { const s = getCampaignStatus(campaign); return s === 'ended' ? 'closed' : s === 'closed' ? 'closed' : 'green' })()} `} style={getCampaignStatus(campaign) === 'ended' ? { opacity: 0.7 } : {}}>
+                  {getCampaignStatus(campaign) !== 'live' ? null : <span className="status-dot" />}
+                  {' '}{getCampaignStatus(campaign) === 'ended' ? 'ended' : getCampaignStatus(campaign) === 'closed' ? 'closed' : campaign.inviteOnly ? 'private campaign' : 'public campaign'}
                 </span>
                 <p className="mono address-line">AGENCY {shortenAddress(campaign.agency)}</p>
               </div>
