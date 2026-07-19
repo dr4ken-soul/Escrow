@@ -705,8 +705,31 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
   const isAgency = wallet.account?.toLowerCase() === campaign.agency.toLowerCase(); const mySlot = campaign.slots.find(s => s.kol.toLowerCase() === wallet.account?.toLowerCase() && s.status !== 5); const canJoin = !isAgency && !mySlot && !isPast(campaign.deadline) && campaign.joined < campaign.maxSlots && Boolean(wallet.account); const agencyInviteCode = isAgency && campaign.inviteOnly ? window.localStorage.getItem(`escrow:invite:${campaign.id}`) || '' : ''; const locked = campaign.funded >= campaign.paid + campaign.withdrawn ? campaign.funded - campaign.paid - campaign.withdrawn : 0n
   const act = async (name: Parameters<typeof sendTransaction>[1], args: readonly unknown[] = [], token = false) => { if (!wallet.account) { void wallet.connect(); return } setBusy(name); setMessage(''); setTxHash(''); try { const hash = await sendTransaction(wallet.account, name, args, token); setTxHash(hash); setMessage(`Confirmed onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Transaction failed.'); setBusy('') } }
   const updateSlotPayout = async (slotId: number, value: string) => { if (!wallet.account) { void wallet.connect(); return } const nextPayout = toUnits(value); if (nextPayout <= 0n) { setMessage('Enter a payout greater than zero.'); return } const reservedByOtherSlots = campaign.slots.filter(item => item.slotId !== slotId && !item.paid && item.status !== 5).reduce((sum, item) => sum + item.payout, 0n); const available = campaign.funded - campaign.paid - campaign.withdrawn - reservedByOtherSlots; setBusy('Checking payout'); setMessage(''); setTxHash(''); try { if (nextPayout > available) { const additional = nextPayout - available; setBusy('Approving extra USDC'); await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, additional], true); setBusy('Adding escrow'); await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), additional]); } setBusy('Saving payout'); const hash = await sendTransaction(wallet.account, 'setSlotPayout', [BigInt(campaign.id), BigInt(slotId), nextPayout]); setTxHash(hash); setMessage(`Payout updated onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Payout update failed.'); setBusy('') } }
-  const fundCampaign = async (amount: string) => { if (!wallet.account) { void wallet.connect(); return } const fundAmount = toUnits(amount); if (fundAmount <= 0n) { setMessage('Enter an amount greater than zero.'); return } setBusy('Approving USDC'); setMessage(''); setTxHash(''); try { await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, fundAmount], true); setBusy('Funding campaign'); const hash = await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), fundAmount]); setTxHash(hash); setMessage(`Campaign funded: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') } }
-  const requiredBudget = campaign.payout * (campaign.maxSlots - campaign.joined)
+  // fundCampaign: routes to correct contract function based on current funded state
+  // - funded == 0 → use fundCampaign() (no args, contract computes payout*maxSlots)
+  // - funded > 0  → use fundAdditional(campaignId, amount) for top-up
+  const fundCampaign = async () => {
+    if (!wallet.account) { void wallet.connect(); return }
+    setBusy('Approving USDC'); setMessage(''); setTxHash('');
+    try {
+      if (campaign.funded === 0n) {
+        // First-time fund: contract calculates exact amount (payout * maxSlots)
+        const totalNeeded = campaign.payout * campaign.maxSlots
+        await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, totalNeeded], true)
+        setBusy('Funding campaign')
+        const hash = await sendTransaction(wallet.account, 'fundCampaign', [BigInt(campaign.id)])
+        setTxHash(hash); setMessage(`Campaign funded: ${shortenAddress(hash)}`); setBusy(''); onRefresh()
+      } else {
+        // Top-up: fund only the remaining shortfall
+        const shortfall = requiredBudget - locked
+        await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, shortfall], true)
+        setBusy('Funding campaign')
+        const hash = await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), shortfall])
+        setTxHash(hash); setMessage(`Campaign topped up: ${shortenAddress(hash)}`); setBusy(''); onRefresh()
+      }
+    } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') }
+  }
+  const requiredBudget = campaign.payout * campaign.maxSlots
   const needsFunding = isAgency && locked < requiredBudget
   const activeSlots = campaign.slots.filter(slot => slot.status !== 5)
   return (
@@ -805,9 +828,9 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                 {needsFunding && (
                   <div className="fund-campaign-card" style={{ background: 'var(--surface-2, rgba(255,200,50,0.08))', border: '1px solid var(--warning-border, rgba(255,200,50,0.25))', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
                     <span className="eyebrow" style={{ color: 'var(--warning-text, #f5c542)' }}>⚠ Campaign needs funding</span>
-                    <p style={{ fontSize: '0.85rem', opacity: 0.8, margin: '0.35rem 0 0.75rem' }}>This campaign requires <b>{formatUnits(requiredBudget)} USDC</b> to cover {Number(campaign.maxSlots - campaign.joined)} unfilled slot{Number(campaign.maxSlots - campaign.joined) > 1 ? 's' : ''}. KOLs cannot join until the budget is funded.</p>
-                    <Button onClick={() => void fundCampaign(formatUnits(requiredBudget))} disabled={Boolean(busy)} icon={<Zap size={15} />}>
-                      {busy || `Fund ${formatUnits(requiredBudget)} USDC`}
+                    <p style={{ fontSize: '0.85rem', opacity: 0.8, margin: '0.35rem 0 0.75rem' }}>This campaign requires <b>{formatUnits(requiredBudget - locked)} USDC</b> to cover {Number(campaign.maxSlots - campaign.joined)} unfilled slot{Number(campaign.maxSlots - campaign.joined) > 1 ? 's' : ''}. KOLs cannot join until the budget is funded.</p>
+                    <Button onClick={() => void fundCampaign()} disabled={Boolean(busy)} icon={<Zap size={15} />}>
+                      {busy || `Fund ${formatUnits(requiredBudget - locked)} USDC`}
                     </Button>
                   </div>
                 )}
