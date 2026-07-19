@@ -779,6 +779,10 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
   const isEnded = getCampaignStatus(campaign) === 'ended'
   const isReleasedClosed = isEnded && campaign.maxSlots === campaign.joined
   const activeSlots = campaign.slots.filter(slot => slot.status !== 5)
+  // KOL chỉ xem slot của mình; agency xem tất cả
+  const ledgerSlots = isAgency
+    ? activeSlots
+    : activeSlots.filter(s => s.kol.toLowerCase() === wallet.account?.toLowerCase())
   return (
     <>
       <PageHeading
@@ -828,11 +832,11 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                 <span className="eyebrow">Slot ledger</span>
                 <h2>Proof status</h2>
               </div>
-              <span className="mono">{activeSlots.length} participant records</span>
+              <span className="mono">{ledgerSlots.length} participant records</span>
             </div>
-            {activeSlots.length ? (
+            {ledgerSlots.length ? (
               <div className="slot-list">
-                {activeSlots.map(slot => (
+                {ledgerSlots.map(slot => (
                   <SlotRowV3
                     key={slot.slotId}
                     slot={slot}
