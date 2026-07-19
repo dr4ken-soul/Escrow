@@ -61,6 +61,8 @@ export function toUnits(value: string, decimals = 6) {
 
 export function shortenAddress(address?: string) { return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Not connected' }
 export function txUrl(hash: string) { return `https://testnet.monadexplorer.com/tx/${hash}` }
+export function addressUrl(address: string) { return `https://testnet.monadexplorer.com/address/${address}` }
+
 
 declare global {
   interface Window { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown>; on?: (event: string, handler: (...args: unknown[]) => void) => void; removeListener?: (event: string, handler: (...args: unknown[]) => void) => void } }

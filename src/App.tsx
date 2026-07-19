@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowRight, Check, ChevronDown, CircleHelp, Clipboard, Clock3, Copy, ExternalLink, FileCheck2, LayoutDashboard, Link2, LogOut, Menu, Moon, Plus, RefreshCw, ShieldCheck, Sparkles, Sun, WalletCards, X, Zap } from 'lucide-react'
-import { formatUnits, isConfigured, USDC_ADDRESS, MOCK_USDC_ADDRESS, publicClient, ESCROW_ADDRESS, RPC_URL, sendTransaction, shortenAddress, toUnits, txUrl, escrowAbi, tokenAbi } from './lib/contract'
+import { formatUnits, isConfigured, USDC_ADDRESS, MOCK_USDC_ADDRESS, publicClient, ESCROW_ADDRESS, RPC_URL, sendTransaction, shortenAddress, toUnits, txUrl, addressUrl, escrowAbi, tokenAbi } from './lib/contract'
 import { keccak256, toBytes } from 'viem'
 import type { Address } from 'viem'
 
@@ -361,13 +361,168 @@ function PublicProof({ campaigns }: { campaigns: Campaign[] }) { const { id } = 
 function RouteLoading() { return <div className="route-loading"><div className="loading-bar" /><span className="eyebrow">Checking wallet session</span></div> }
 
 function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
-  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState('')
+  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState('')
   if (!campaign) return <EmptyState title="Campaign not found" body="This campaign is not indexed yet or the address is incorrect." action={<Button to="/app/campaigns">Back to campaigns</Button>} />
   const isAgency = wallet.account?.toLowerCase() === campaign.agency.toLowerCase(); const mySlot = campaign.slots.find(s => s.kol.toLowerCase() === wallet.account?.toLowerCase() && s.status !== 5); const canJoin = !isAgency && !mySlot && !isPast(campaign.deadline) && campaign.joined < campaign.maxSlots && Boolean(wallet.account); const agencyInviteCode = isAgency && campaign.inviteOnly ? window.localStorage.getItem(`escrow:invite:${campaign.id}`) || '' : ''; const locked = campaign.funded >= campaign.paid + campaign.withdrawn ? campaign.funded - campaign.paid - campaign.withdrawn : 0n
-  const act = async (name: Parameters<typeof sendTransaction>[1], args: readonly unknown[] = [], token = false) => { if (!wallet.account) { void wallet.connect(); return } setBusy(name); setMessage(''); try { const hash = await sendTransaction(wallet.account, name, args, token); setMessage(`Confirmed onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Transaction failed.'); setBusy('') } }
-  const updateSlotPayout = async (slotId: number, value: string) => { if (!wallet.account) { void wallet.connect(); return } const nextPayout = toUnits(value); if (nextPayout <= 0n) { setMessage('Enter a payout greater than zero.'); return } const reservedByOtherSlots = campaign.slots.filter(item => item.slotId !== slotId && !item.paid && item.status !== 5).reduce((sum, item) => sum + item.payout, 0n); const available = campaign.funded - campaign.paid - campaign.withdrawn - reservedByOtherSlots; setBusy('Checking payout'); setMessage(''); try { if (nextPayout > available) { const additional = nextPayout - available; setBusy('Approving extra USDC'); await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, additional], true); setBusy('Adding escrow'); await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), additional]); } setBusy('Saving payout'); const hash = await sendTransaction(wallet.account, 'setSlotPayout', [BigInt(campaign.id), BigInt(slotId), nextPayout]); setMessage(`Payout updated onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Payout update failed.'); setBusy('') } }
+  const act = async (name: Parameters<typeof sendTransaction>[1], args: readonly unknown[] = [], token = false) => { if (!wallet.account) { void wallet.connect(); return } setBusy(name); setMessage(''); setTxHash(''); try { const hash = await sendTransaction(wallet.account, name, args, token); setTxHash(hash); setMessage(`Confirmed onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Transaction failed.'); setBusy('') } }
+  const updateSlotPayout = async (slotId: number, value: string) => { if (!wallet.account) { void wallet.connect(); return } const nextPayout = toUnits(value); if (nextPayout <= 0n) { setMessage('Enter a payout greater than zero.'); return } const reservedByOtherSlots = campaign.slots.filter(item => item.slotId !== slotId && !item.paid && item.status !== 5).reduce((sum, item) => sum + item.payout, 0n); const available = campaign.funded - campaign.paid - campaign.withdrawn - reservedByOtherSlots; setBusy('Checking payout'); setMessage(''); setTxHash(''); try { if (nextPayout > available) { const additional = nextPayout - available; setBusy('Approving extra USDC'); await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, additional], true); setBusy('Adding escrow'); await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), additional]); } setBusy('Saving payout'); const hash = await sendTransaction(wallet.account, 'setSlotPayout', [BigInt(campaign.id), BigInt(slotId), nextPayout]); setTxHash(hash); setMessage(`Payout updated onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Payout update failed.'); setBusy('') } }
   const activeSlots = campaign.slots.filter(slot => slot.status !== 5)
-  return <><PageHeading eyebrow={`Campaign / ${String(campaign.id).padStart(2, '0')}`} title={campaign.title} action={<Button variant="quiet" to={`/app/campaigns/${campaign.id}/proof`} icon={<ExternalLink size={15} />}>Public proof</Button>} /><div className="workspace-grid"><div className="workspace-primary"><section className="campaign-hero panel"><div className="campaign-hero-top"><div><span className="pill green"><span className="status-dot" /> {isPast(campaign.deadline) ? 'closed' : campaign.inviteOnly ? 'private campaign' : 'public campaign'}</span><p className="mono address-line">AGENCY {shortenAddress(campaign.agency)}</p></div><div className="hero-budget"><span>LOCKED BUDGET</span><b>{formatUnits(locked)} <small>USDC</small></b></div></div><p className="campaign-brief">{campaign.brief || 'Fixed payout campaign. Submit one public proof URL after the work is live.'}</p><div className="campaign-facts"><div><span>{isAgency ? 'STARTING / SLOT' : 'YOUR SLOT'}</span><b>{isAgency ? `${formatUnits(campaign.payout)} USDC` : mySlot ? `${formatUnits(mySlot.payout)} USDC` : 'Set on join'}</b></div><div><span>SLOTS</span><b>{Number(campaign.joined)} / {Number(campaign.maxSlots)} filled</b></div><div><span>DEADLINE</span><b>{fmtDate(campaign.deadline)}</b></div><div><span>REVIEW WINDOW</span><b>{Number(campaign.reviewTimeout) / 3600} hours</b></div></div></section><section className="panel"><div className="panel-heading"><div><span className="eyebrow">Slot ledger</span><h2>Proof status</h2></div><span className="mono">{activeSlots.length} participant records</span></div>{activeSlots.length ? <div className="slot-list">{activeSlots.map(slot => <SlotRowV3 key={slot.slotId} slot={slot} isAgency={Boolean(isAgency)} isOwn={slot.kol.toLowerCase() === wallet.account?.toLowerCase()} busy={busy} onApprove={() => void act('approveProof', [BigInt(campaign.id), BigInt(slot.slotId)])} onReject={() => void act('rejectProof', [BigInt(campaign.id), BigInt(slot.slotId), rejectReason || 'Please revise the proof and resubmit.'])} onRemove={() => void act('removeKol', [BigInt(campaign.id), BigInt(slot.slotId)])} onSetPayout={value => void updateSlotPayout(slot.slotId, value)} rejectReason={rejectReason} setRejectReason={setRejectReason} />)}</div> : <EmptyState title="No KOLs yet" body="Once a wallet accepts a slot, its proof state will appear here." />}</section></div><aside className="workspace-side"><section className="action-panel"><span className="eyebrow">Your role</span><h3>{isAgency ? 'Agency review desk' : mySlot ? 'KOL delivery slot' : 'Open campaign'}</h3>{isAgency ? <><p>You created this campaign. Review each submitted proof, adjust unsubmitted slot payouts, or remove a KOL before proof is submitted.</p>{campaign.inviteOnly && <div className="campaign-code-card"><div><span className="eyebrow">Agency invite code</span><code>{agencyInviteCode || 'Only available on the creation device'}</code></div>{agencyInviteCode && <button type="button" aria-label="Copy agency invite code" onClick={() => { void navigator.clipboard.writeText(agencyInviteCode); setMessage('Invite code copied.') }}><Copy size={16} /></button>}</div>}{Number(campaign.joined) < Number(campaign.maxSlots) && <Button onClick={() => void act('releaseUnfilled', [BigInt(campaign.id)])} disabled={Boolean(busy)}>{busy || 'Release unfilled budget'}<ArrowRight size={15} /></Button>}{isPast(campaign.deadline) && <Button onClick={() => void act('withdrawUnused', [BigInt(campaign.id)])} disabled={Boolean(busy)}>{busy || 'Withdraw unused budget'}<ArrowRight size={15} /></Button>}</> : mySlot ? <><StatusBadge status={mySlot.status} /><p>{mySlot.status === 1 ? 'The agency has the proof. The timeout clock is running.' : mySlot.status === 3 ? `Rejected: ${mySlot.rejectionReason}` : mySlot.status === 0 ? `Your slot is reserved at ${formatUnits(mySlot.payout)} USDC. Submit the public link when the work is live.` : 'This slot has been settled.'}</p>{mySlot.status === 1 && Number(mySlot.submittedAt) * 1000 + Number(campaign.reviewTimeout) * 1000 < Date.now() && <Button onClick={() => void act('claimAfterTimeout', [BigInt(campaign.id)])} disabled={Boolean(busy)}>{busy || 'Claim after timeout'}<Clock3 size={15} /></Button>}{(mySlot.status === 0 || mySlot.status === 3) && <form onSubmit={e => { e.preventDefault(); void act('submitProof', [BigInt(campaign.id), proof, note]) }}><label>Proof URL<input required type="url" value={proof} onChange={e => setProof(e.target.value)} placeholder="https://x.com/..." /></label><label>Note <span className="optional">optional</span><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="What should the agency verify?" /></label><Button type="submit" disabled={Boolean(busy)}>{busy || (mySlot.status === 3 ? 'Resubmit proof' : 'Submit proof')}<ArrowRight size={15} /></Button></form>}</> : <><p>{campaign.inviteOnly ? 'This campaign is invite-only. Enter the code shared by the agency to claim an available slot.' : 'Claim one available slot and submit a public link when the work is complete.'}</p>{campaign.inviteOnly && <label>Campaign code<input value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="Enter invite code" /></label>}<Button onClick={() => void act(campaign.inviteOnly ? 'acceptSlotWithCode' : 'acceptSlot', campaign.inviteOnly ? [BigInt(campaign.id), inviteCode.trim()] : [BigInt(campaign.id)])} disabled={!canJoin || Boolean(busy) || (campaign.inviteOnly && !inviteCode.trim())}>{busy || 'Claim slot'}<ArrowRight size={15} /></Button></>}</section><section className="panel side-details"><span className="eyebrow">Settlement notes</span><div><Check size={15} /> Full budget funded before joining</div><div><Check size={15} /> Slot payout is visible to its assigned KOL</div><div><Check size={15} /> Unused funds return after deadline</div><a href={txUrl('')} target="_blank" rel="noreferrer" className="disabled-link">View contract on explorer <ExternalLink size={13} /></a></section>{message && <div className={message.includes('failed') ? 'form-message error' : 'form-message'}>{message}</div>}</aside></div></>
+  return (
+    <>
+      <PageHeading
+        eyebrow={`Campaign / ${String(campaign.id).padStart(2, '0')}`}
+        title={campaign.title}
+        action={<Button variant="quiet" to={`/app/campaigns/${campaign.id}/proof`} icon={<ExternalLink size={15} />}>Public proof</Button>}
+      />
+      <div className="workspace-grid">
+        <div className="workspace-primary">
+          <section className="campaign-hero panel">
+            <div className="campaign-hero-top">
+              <div>
+                <span className="pill green">
+                  <span className="status-dot" /> {isPast(campaign.deadline) ? 'closed' : campaign.inviteOnly ? 'private campaign' : 'public campaign'}
+                </span>
+                <p className="mono address-line">AGENCY {shortenAddress(campaign.agency)}</p>
+              </div>
+              <div className="hero-budget">
+                <span>LOCKED BUDGET</span>
+                <b>{formatUnits(locked)} <small>USDC</small></b>
+              </div>
+            </div>
+            <p className="campaign-brief">{campaign.brief || 'Fixed payout campaign. Submit one public proof URL after the work is live.'}</p>
+            <div className="campaign-facts">
+              <div>
+                <span>{isAgency ? 'STARTING / SLOT' : 'YOUR SLOT'}</span>
+                <b>{isAgency ? `${formatUnits(campaign.payout)} USDC` : mySlot ? `${formatUnits(mySlot.payout)} USDC` : 'Set on join'}</b>
+              </div>
+              <div>
+                <span>SLOTS</span>
+                <b>{Number(campaign.joined)} / {Number(campaign.maxSlots)} filled</b>
+              </div>
+              <div>
+                <span>DEADLINE</span>
+                <b>{fmtDate(campaign.deadline)}</b>
+              </div>
+              <div>
+                <span>REVIEW WINDOW</span>
+                <b>{Number(campaign.reviewTimeout) / 3600} hours</b>
+              </div>
+            </div>
+          </section>
+          <section className="panel">
+            <div className="panel-heading">
+              <div>
+                <span className="eyebrow">Slot ledger</span>
+                <h2>Proof status</h2>
+              </div>
+              <span className="mono">{activeSlots.length} participant records</span>
+            </div>
+            {activeSlots.length ? (
+              <div className="slot-list">
+                {activeSlots.map(slot => (
+                  <SlotRowV3
+                    key={slot.slotId}
+                    slot={slot}
+                    isAgency={Boolean(isAgency)}
+                    isOwn={slot.kol.toLowerCase() === wallet.account?.toLowerCase()}
+                    busy={busy}
+                    onApprove={() => void act('approveProof', [BigInt(campaign.id), BigInt(slot.slotId)])}
+                    onReject={() => void act('rejectProof', [BigInt(campaign.id), BigInt(slot.slotId), rejectReason || 'Please revise the proof and resubmit.'])}
+                    onRemove={() => void act('removeKol', [BigInt(campaign.id), BigInt(slot.slotId)])}
+                    onSetPayout={value => void updateSlotPayout(slot.slotId, value)}
+                    rejectReason={rejectReason}
+                    setRejectReason={setRejectReason}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No KOLs yet" body="Once a wallet accepts a slot, its proof state will appear here." />
+            )}
+          </section>
+        </div>
+        <aside className="workspace-side">
+          <section className="action-panel">
+            <span className="eyebrow">Your role</span>
+            <h3>{isAgency ? 'Agency review desk' : mySlot ? 'KOL delivery slot' : 'Open campaign'}</h3>
+            {isAgency ? (
+              <>
+                <p>You created this campaign. Review each submitted proof, adjust unsubmitted slot payouts, or remove a KOL before proof is submitted.</p>
+                {campaign.inviteOnly && (
+                  <div className="campaign-code-card">
+                    <div>
+                      <span className="eyebrow">Agency invite code</span>
+                      <code>{agencyInviteCode || 'Only available on the creation device'}</code>
+                    </div>
+                    {agencyInviteCode && (
+                      <button type="button" aria-label="Copy agency invite code" onClick={() => { void navigator.clipboard.writeText(agencyInviteCode); setMessage('Invite code copied.') }}>
+                        <Copy size={16} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {Number(campaign.joined) < Number(campaign.maxSlots) && (
+                  <Button onClick={() => void act('releaseUnfilled', [BigInt(campaign.id)])} disabled={Boolean(busy)}>
+                    {busy || 'Release unfilled budget'}<ArrowRight size={15} />
+                  </Button>
+                )}
+                {isPast(campaign.deadline) && (
+                  <Button onClick={() => void act('withdrawUnused', [BigInt(campaign.id)])} disabled={Boolean(busy)}>
+                    {busy || 'Withdraw unused budget'}<ArrowRight size={15} />
+                  </Button>
+                )}
+              </>
+            ) : mySlot ? (
+              <>
+                <StatusBadge status={mySlot.status} />
+                <p>{mySlot.status === 1 ? 'The agency has the proof. The timeout clock is running.' : mySlot.status === 3 ? `Rejected: ${mySlot.rejectionReason}` : mySlot.status === 0 ? `Your slot is reserved at ${formatUnits(mySlot.payout)} USDC. Submit the public link when the work is live.` : 'This slot has been settled.'}</p>
+                {mySlot.status === 1 && Number(mySlot.submittedAt) * 1000 + Number(campaign.reviewTimeout) * 1000 < Date.now() && (
+                  <Button onClick={() => void act('claimAfterTimeout', [BigInt(campaign.id)])} disabled={Boolean(busy)}>
+                    {busy || 'Claim after timeout'}<Clock3 size={15} />
+                  </Button>
+                )}
+                {(mySlot.status === 0 || mySlot.status === 3) && (
+                  <form onSubmit={e => { e.preventDefault(); void act('submitProof', [BigInt(campaign.id), proof, note]) }}>
+                    <label>Proof URL<input required type="url" value={proof} onChange={e => setProof(e.target.value)} placeholder="https://x.com/..." /></label>
+                    <label>Note <span className="optional">optional</span><textarea value={note} onChange={e => setNote(e.target.value)} placeholder="What should the agency verify?" /></label>
+                    <Button type="submit" disabled={Boolean(busy)}>{busy || (mySlot.status === 3 ? 'Resubmit proof' : 'Submit proof')}<ArrowRight size={15} /></Button>
+                  </form>
+                )}
+              </>
+            ) : (
+              <>
+                <p>{campaign.inviteOnly ? 'This campaign is invite-only. Enter the code shared by the agency to claim an available slot.' : 'Claim one available slot and submit a public link when the work is complete.'}</p>
+                {campaign.inviteOnly && (
+                  <label>Campaign code<input value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="Enter invite code" /></label>
+                )}
+                <Button onClick={() => void act(campaign.inviteOnly ? 'acceptSlotWithCode' : 'acceptSlot', campaign.inviteOnly ? [BigInt(campaign.id), inviteCode.trim()] : [BigInt(campaign.id)])} disabled={!canJoin || Boolean(busy) || (campaign.inviteOnly && !inviteCode.trim())}>
+                  {busy || 'Claim slot'}<ArrowRight size={15} />
+                </Button>
+              </>
+            )}
+          </section>
+          <section className="panel side-details">
+            <span className="eyebrow">Settlement notes</span>
+            <div><Check size={15} /> Full budget funded before joining</div>
+            <div><Check size={15} /> Slot payout is visible to its assigned KOL</div>
+            <div><Check size={15} /> Unused funds return after deadline</div>
+            <a href={addressUrl(ESCROW_ADDRESS)} target="_blank" rel="noreferrer" className="explorer-link">
+              View contract on explorer <ExternalLink size={13} />
+            </a>
+          </section>
+          {message && (
+            <div className={message.includes('failed') || message.includes('Enter') ? 'form-message error' : 'form-message'}>
+              <div>{message}</div>
+              {txHash && (
+                <a href={txUrl(txHash)} target="_blank" rel="noreferrer" className="msg-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginTop: '0.4rem', textDecoration: 'underline', color: 'inherit' }}>
+                  View transaction <ExternalLink size={12} />
+                </a>
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
+    </>
+  )
 }
 
 function SlotRowV3({ slot, isAgency, isOwn, busy, onApprove, onReject, onRemove, onSetPayout, rejectReason, setRejectReason }: { slot: Slot; isAgency: boolean; isOwn: boolean; busy: string; onApprove: () => void; onReject: () => void; onRemove: () => void; onSetPayout: (value: string) => void; rejectReason: string; setRejectReason: (x: string) => void }) {
