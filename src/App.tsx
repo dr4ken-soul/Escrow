@@ -730,7 +730,9 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
     } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') }
   }
   const requiredBudget = campaign.payout * campaign.maxSlots
-  const needsFunding = isAgency && locked < requiredBudget
+  const needsFunding = isAgency && locked < requiredBudget && campaign.maxSlots > campaign.joined
+  // Campaign has been "closed" by Release unfilled budget: maxSlots was set = joined, no new slots possible
+  const isReleasedClosed = isAgency && campaign.funded > 0n && locked === 0n && campaign.maxSlots === campaign.joined && campaign.joined < BigInt(campaign.slots.filter(s => s.status !== 5).length + 1)
   const activeSlots = campaign.slots.filter(slot => slot.status !== 5)
   return (
     <>
@@ -832,6 +834,13 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                     <Button onClick={() => void fundCampaign()} disabled={Boolean(busy)} icon={<Zap size={15} />}>
                       {busy || `Fund ${formatUnits(requiredBudget - locked)} USDC`}
                     </Button>
+                  </div>
+                )}
+                {isReleasedClosed && (
+                  <div style={{ background: 'rgba(100,100,100,0.12)', border: '1px solid rgba(150,150,150,0.2)', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
+                    <span className="eyebrow" style={{ opacity: 0.7 }}>ℹ Budget released</span>
+                    <p style={{ fontSize: '0.85rem', opacity: 0.7, margin: '0.35rem 0 0.75rem' }}>You released the unfilled budget. The remaining slots are permanently closed — no new KOLs can join. Existing KOL slots are still covered.</p>
+                    <Button to="/app/campaigns/new" icon={<Plus size={15} />}>Create new campaign</Button>
                   </div>
                 )}
                 {Number(campaign.joined) < Number(campaign.maxSlots) && locked > 0n && (
