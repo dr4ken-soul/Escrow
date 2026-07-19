@@ -14,7 +14,7 @@ Agencies either pay KOLs upfront and risk undelivered work, or ask KOLs to post 
 
 ## Solution
 
-Escrow locks the full Monad testnet USDC campaign budget onchain before work begins. Every campaign is private: the agency creates it, the app generates a one-time invite code + share link, and only KOLs with that code can register a wallet for a slot. Each KOL submits a public proof URL and receives their assigned fixed payout the instant the agency approves. If the agency stays silent past the review timeout, the KOL can claim the payout themselves. Before proof is submitted, the agency can adjust an individual slot's payout or remove a slot. The agency can reclaim the budget of unclaimed slots at any time, and any remaining unused budget returns after the deadline — pending submissions stay reserved until reviewed or timeout-claimed.
+Escrow locks the full Monad testnet USDC campaign budget onchain before work begins. Every campaign is private: the agency creates it, the app generates a one-time invite code + share link, and only KOLs with that code can register a wallet for a slot. Each KOL submits a public proof URL and receives their assigned fixed payout the instant the agency approves. If the agency stays silent past the review timeout, the KOL can claim the payout themselves. Before proof is submitted, the agency can adjust an individual slot's payout or remove a slot. The agency can reclaim the budget of unclaimed slots at any time, and any remaining unused budget returns after the deadline — pending submissions stay reserved until reviewed or timeout-claimed. Identity is your wallet — no signup, no backend — and in the app each KOL sees only their own slot, so payouts stay private from other KOLs (all campaign state is still verifiable onchain).
 
 ## Category
 
@@ -40,7 +40,7 @@ USDC (Monad testnet): `0x534b2f3A21130d7a60830c2Df862319e593943A3`
 
 ## Social post
 
-`TODO: public post URL`
+https://x.com/ice_bearcute/status/2078875327124869591
 
 ## Three-minute demo script
 
