@@ -135,8 +135,11 @@ function useCampaigns(refreshKey: number) {
     try {
       const count = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'campaignCount' }) as bigint
       console.log('Fetching campaigns count:', count)
+      const stored = window.localStorage.getItem('escrow:hidden-campaigns')
+      const hiddenIds = stored ? JSON.parse(stored) as number[] : []
       const next: Campaign[] = []
       for (let id = 0; id < Number(count); id += 1) {
+        if (hiddenIds.includes(id)) continue
         try {
           const raw = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getCampaign', args: [BigInt(id)] }) as { agency: Address; token: Address; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; inviteCodeHash: string }
           const slotCount = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlotCount', args: [BigInt(id)] }) as bigint
@@ -173,10 +176,10 @@ function useCampaigns(refreshKey: number) {
   return { campaigns, loading, reload: load }
 }
 
-function Button({ children, variant = 'primary', onClick, to, disabled = false, type = 'button', icon }: { children: React.ReactNode; variant?: 'primary' | 'outline' | 'quiet' | 'danger'; onClick?: () => void; to?: string; disabled?: boolean; type?: 'button' | 'submit'; icon?: React.ReactNode }) {
+function Button({ children, variant = 'primary', onClick, to, disabled = false, type = 'button', icon, style }: { children: React.ReactNode; variant?: 'primary' | 'outline' | 'quiet' | 'danger'; onClick?: () => void; to?: string; disabled?: boolean; type?: 'button' | 'submit'; icon?: React.ReactNode; style?: React.CSSProperties }) {
   const className = `button button-${variant}`
-  if (to) return <Link className={className} to={to}>{children}{icon || <ArrowRight size={16} />}</Link>
-  return <button className={className} onClick={onClick} disabled={disabled} type={type}>{children}{icon}</button>
+  if (to) return <Link className={className} to={to} style={style}>{children}{icon || <ArrowRight size={16} />}</Link>
+  return <button className={className} onClick={onClick} disabled={disabled} type={type} style={style}>{children}{icon}</button>
 }
 
 function WalletConnectModal({ isOpen, onClose, wallet, onSuccess }: { isOpen: boolean; onClose: () => void; wallet: ReturnType<typeof useWallet>; onSuccess: () => void }) {
@@ -722,7 +725,20 @@ function PublicProof({ campaigns }: { campaigns: Campaign[] }) { const { id } = 
 function RouteLoading() { return <div className="route-loading"><div className="loading-bar" /><span className="eyebrow">Checking wallet session</span></div> }
 
 function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
-  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState(''); const [customFundAmount, setCustomFundAmount] = useState(''); const [walletUsdc, setWalletUsdc] = useState<bigint | null>(null)
+  const { id } = useParams(); const navigate = useNavigate(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState(''); const [customFundAmount, setCustomFundAmount] = useState(''); const [walletUsdc, setWalletUsdc] = useState<bigint | null>(null)
+  const handleHideCampaign = () => {
+    if (!campaign) return
+    if (window.confirm("Archive this campaign? It will be hidden from your workspace lists. (This only hides it on your browser)")) {
+      const stored = window.localStorage.getItem('escrow:hidden-campaigns')
+      const hiddenIds = stored ? JSON.parse(stored) as number[] : []
+      if (!hiddenIds.includes(campaign.id)) {
+        hiddenIds.push(campaign.id)
+        window.localStorage.setItem('escrow:hidden-campaigns', JSON.stringify(hiddenIds))
+      }
+      navigate('/app')
+      onRefresh()
+    }
+  }
   useEffect(() => {
     if (!wallet.account || !USDC_ADDRESS) { setWalletUsdc(null); return }
     publicClient.readContract({ address: USDC_ADDRESS, abi: tokenAbi, functionName: 'balanceOf', args: [wallet.account as Address] })
@@ -938,6 +954,17 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                     )}
                   </div>
                 )}
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                  <Button 
+                    variant="quiet" 
+                    onClick={handleHideCampaign} 
+                    disabled={Boolean(busy)}
+                    icon={<X size={14} />}
+                    style={{ color: 'var(--rejected, #e05f5f)', opacity: 0.85, width: '100%', justifyContent: 'center' }}
+                  >
+                    Archive / Hide campaign
+                  </Button>
+                </div>
               </>
             ) : mySlot ? (
               <>
