@@ -598,9 +598,9 @@ function CampaignList({ campaigns, account, loading }: { campaigns: Campaign[]; 
         <div className="workspace-primary">
           {visible.length ? (
             <div className="directory-list">
-              {visible.map(c => (
+              {visible.map((c, idx) => (
                 <Link to={`/app/campaigns/${c.id}`} className="directory-row" key={c.id}>
-                  <div className="directory-number">{String(c.id + 1).padStart(2, '0')}</div>
+                  <div className="directory-number">{String(visible.length - idx).padStart(2, '0')}</div>
                   <div className="directory-main">
                     <div>
                       <h3>{c.title}</h3>
