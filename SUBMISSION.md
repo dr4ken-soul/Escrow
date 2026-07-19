@@ -36,7 +36,7 @@ USDC (Monad testnet): `0x534b2f3A21130d7a60830c2Df862319e593943A3`
 
 ## Demo video
 
-`TODO: public video URL, under 3 minutes`
+https://x.com/ice_bearcute/status/2078875327124869591
 
 ## Social post
 
