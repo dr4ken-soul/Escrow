@@ -196,7 +196,7 @@ body{transition:background-color .22s ease,color .22s ease}
 .theme-toggle-thumb{display:grid;place-items:center;position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--text-secondary);color:var(--bg-primary);transition:transform .2s cubic-bezier(.22,1,.36,1),background-color .2s ease,color .2s ease}
 .theme-toggle[aria-pressed="true"] .theme-toggle-track{border-color:rgba(154,103,28,.35);background:var(--accent-glow)}
 .theme-toggle[aria-pressed="true"] .theme-toggle-thumb{transform:translateX(13px);background:var(--accent);color:var(--bg-primary)}
-.campaign-code-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem;padding:.8rem;border:1px solid rgba(214,163,84,.28);border-radius:.7rem;background:var(--accent-glow)}
+.campaign-code-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem;margin-bottom:1rem;padding:.8rem;border:1px solid rgba(214,163,84,.28);border-radius:.7rem;background:var(--accent-glow)}
 .campaign-code-card .eyebrow{display:block;margin-bottom:.35rem;font-size:.56rem}
 .campaign-code-card code{display:block;color:var(--text-primary);font-size:.78rem;letter-spacing:.08em;word-break:break-all}
 .campaign-code-card button{display:grid;place-items:center;flex:0 0 auto;width:32px;height:32px;border:1px solid var(--border-default);border-radius:.5rem;background:transparent;color:var(--accent)}
