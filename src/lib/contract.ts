@@ -27,6 +27,7 @@ export const escrowAbi = [
   { type: 'function', name: 'rejectProof', stateMutability: 'nonpayable', inputs: [{ name: 'campaignId', type: 'uint256' }, { name: 'slotId', type: 'uint256' }, { name: 'reason', type: 'string' }], outputs: [] },
   { type: 'function', name: 'claimAfterTimeout', stateMutability: 'nonpayable', inputs: [{ name: 'campaignId', type: 'uint256' }], outputs: [] },
   { type: 'function', name: 'withdrawUnused', stateMutability: 'nonpayable', inputs: [{ name: 'campaignId', type: 'uint256' }], outputs: [] },
+  { type: 'function', name: 'releaseUnfilled', stateMutability: 'nonpayable', inputs: [{ name: 'campaignId', type: 'uint256' }], outputs: [] },
 ] as const
 
 export const tokenAbi = [
@@ -35,7 +36,7 @@ export const tokenAbi = [
   { type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }], outputs: [{ type: 'uint256' }] },
 ] as const
 
-export type TxName = 'createCampaign' | 'fundCampaign' | 'fundAdditional' | 'acceptSlot' | 'acceptSlotWithCode' | 'setSlotPayout' | 'removeKol' | 'submitProof' | 'approveProof' | 'rejectProof' | 'claimAfterTimeout' | 'withdrawUnused' | 'approve'
+export type TxName = 'createCampaign' | 'fundCampaign' | 'fundAdditional' | 'acceptSlot' | 'acceptSlotWithCode' | 'setSlotPayout' | 'removeKol' | 'submitProof' | 'approveProof' | 'rejectProof' | 'claimAfterTimeout' | 'withdrawUnused' | 'releaseUnfilled' | 'approve'
 
 export async function sendTransaction(account: Address, functionName: TxName, args: readonly unknown[] = [], token = false) {
   if (!window.ethereum) throw new Error('No injected wallet found. Install MetaMask or another EVM wallet.')

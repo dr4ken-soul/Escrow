@@ -239,6 +239,30 @@ contract BatchEscrow {
         emit UnusedBudgetWithdrawn(campaignId, available);
     }
 
+    /// @notice Refund the budget for slots that were never claimed, at any time.
+    ///         Only touches money not reserved for a joined KOL (any non-removed,
+    ///         unpaid slot keeps its full payout), so nobody who joined is harmed.
+    ///         Also closes the campaign to new joins so the remaining escrow stays
+    ///         solvent for the KOLs already in.
+    function releaseUnfilled(uint256 campaignId) external {
+        Campaign storage campaign = campaigns[campaignId];
+        require(msg.sender == campaign.agency, 'agency only');
+
+        uint256 reserved;
+        Slot[] storage campaignSlots = slots[campaignId];
+        for (uint256 i = 0; i < campaignSlots.length; i++) {
+            Slot storage slot = campaignSlots[i];
+            if (!slot.paid && slot.status != ProofStatus.Removed) reserved += slot.payout;
+        }
+        uint256 available = campaign.funded - campaign.paid - campaign.withdrawn - reserved;
+        require(available > 0, 'nothing to release');
+
+        campaign.withdrawn += available;
+        campaign.maxSlots = campaign.joined; // no new joins; existing KOLs stay covered
+        require(IERC20Minimal(campaign.token).transfer(campaign.agency, available), 'refund transfer failed');
+        emit UnusedBudgetWithdrawn(campaignId, available);
+    }
+
     function campaignCount() external view returns (uint256) { return campaigns.length; }
     function getCampaign(uint256 campaignId) external view returns (Campaign memory) { return campaigns[campaignId]; }
     function getSlotCount(uint256 campaignId) external view returns (uint256) { return slots[campaignId].length; }
