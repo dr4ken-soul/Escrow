@@ -281,19 +281,28 @@ function AppShell({ wallet, theme, onToggleTheme, children, refreshKey }: { wall
       setUsdcBalance('—')
       return
     }
-    publicClient.getBalance({ address: wallet.account })
-      .then(balance => setMonBalance(formatUnits(balance, 18)))
-      .catch(() => setMonBalance('—'))
+    const fetchBalances = () => {
+      publicClient.getBalance({ address: wallet.account! })
+        .then(balance => setMonBalance(formatUnits(balance, 18)))
+        .catch(() => setMonBalance('—'))
 
-    if (USDC_ADDRESS) {
-      publicClient.readContract({
-        address: USDC_ADDRESS,
-        abi: tokenAbi,
-        functionName: 'balanceOf',
-        args: [wallet.account]
-      })
-        .then(balance => setUsdcBalance(formatUnits(balance as bigint, 6)))
-        .catch(() => setUsdcBalance('—'))
+      if (USDC_ADDRESS) {
+        publicClient.readContract({
+          address: USDC_ADDRESS,
+          abi: tokenAbi,
+          functionName: 'balanceOf',
+          args: [wallet.account!]
+        })
+          .then(balance => setUsdcBalance(formatUnits(balance as bigint, 6)))
+          .catch(() => setUsdcBalance('—'))
+      }
+    }
+    fetchBalances()
+    const delayTimer = window.setTimeout(fetchBalances, 1500)
+    const interval = window.setInterval(fetchBalances, 8000)
+    return () => {
+      window.clearTimeout(delayTimer)
+      window.clearInterval(interval)
     }
   }, [wallet.account, refreshKey])
 
@@ -475,7 +484,25 @@ function StatusBadge({ status }: { status: number }) { return <span className={`
 
 function ReviewQueue({ campaigns, account }: { campaigns: Campaign[]; account?: string }) { const pending = campaigns.filter(c => c.agency.toLowerCase() === account?.toLowerCase()).flatMap(c => c.slots.filter(s => s.status === 1).map(s => ({ c, s }))); return <><PageHeading eyebrow="Agency / review queue" title="Proofs waiting on you." action={<Button variant="quiet" onClick={() => window.location.reload()} icon={<RefreshCw size={15} />}>Refresh</Button>} />{pending.length ? <div className="queue-list">{pending.map(({ c, s }) => <Link to={`/app/campaigns/${c.id}`} className="queue-row" key={`${c.id}-${s.slotId}`}><div className="queue-icon"><FileCheck2 size={18} /></div><div><b>{c.title}</b><span>{shortenAddress(s.kol)} · proof submitted</span></div><div><strong>{formatUnits(s.payout)} USDC</strong><span>ready to release</span></div><ArrowRight size={16} /></Link>)}</div> : <EmptyState title="Queue is clear" body="Submitted proofs will appear here as KOLs deliver work." action={<Button to="/app/campaigns">View campaigns</Button>} />}</> }
 
-function WalletPage({ wallet }: { wallet: ReturnType<typeof useWallet> }) { const [balance, setBalance] = useState('—'); useEffect(() => { if (!wallet.account || !USDC_ADDRESS) return; publicClient.readContract({ address: USDC_ADDRESS, abi: tokenAbi, functionName: 'balanceOf', args: [wallet.account] }).then(v => setBalance(formatUnits(v as bigint))).catch(() => setBalance('—')) }, [wallet.account]); return <><PageHeading eyebrow="Wallet / settlement" title="Your signing desk." action={<WalletButton account={wallet.account} onConnect={wallet.connect} />} /><div className="wallet-grid"><section className="wallet-card panel"><span className="eyebrow">Connected account</span><div className="big-address">{wallet.account ? shortenAddress(wallet.account) : 'Not connected'}</div><p>{wallet.account || 'Connect an EVM wallet to create, join, and settle campaigns.'}</p><div className="wallet-line"><span>Network</span><b>{wallet.chainId === 10143 ? 'Monad testnet' : wallet.chainId ? `Chain ${wallet.chainId}` : 'Not detected'}</b></div><div className="wallet-line"><span>USDC balance</span><b>{balance} USDC</b></div></section><section className="panel"><span className="eyebrow">Contracts</span><div className="contract-line"><span>BatchEscrow</span><code>{ESCROW_ADDRESS ? shortenAddress(ESCROW_ADDRESS) : 'Not configured'}</code></div><div className="contract-line"><span>Monad testnet USDC</span><code>{USDC_ADDRESS ? shortenAddress(USDC_ADDRESS) : 'Not configured'}</code></div><p className="form-help"><ShieldCheck size={14} /> All payout state is read from the deployed contracts. There is no app account database.</p></section></div></> }
+function WalletPage({ wallet }: { wallet: ReturnType<typeof useWallet> }) {
+  const [balance, setBalance] = useState('—');
+  useEffect(() => {
+    if (!wallet.account || !USDC_ADDRESS) return;
+    const fetchBalance = () => {
+      publicClient.readContract({ address: USDC_ADDRESS, abi: tokenAbi, functionName: 'balanceOf', args: [wallet.account!] })
+        .then(v => setBalance(formatUnits(v as bigint)))
+        .catch(() => setBalance('—'))
+    }
+    fetchBalance();
+    const delayTimer = window.setTimeout(fetchBalance, 1500);
+    const interval = window.setInterval(fetchBalance, 8000);
+    return () => {
+      window.clearTimeout(delayTimer);
+      window.clearInterval(interval);
+    }
+  }, [wallet.account]);
+  return <><PageHeading eyebrow="Wallet / settlement" title="Your signing desk." action={<WalletButton account={wallet.account} onConnect={wallet.connect} />} /><div className="wallet-grid"><section className="wallet-card panel"><span className="eyebrow">Connected account</span><div className="big-address">{wallet.account ? shortenAddress(wallet.account) : 'Not connected'}</div><p>{wallet.account || 'Connect an EVM wallet to create, join, and settle campaigns.'}</p><div className="wallet-line"><span>Network</span><b>{wallet.chainId === 10143 ? 'Monad testnet' : wallet.chainId ? `Chain ${wallet.chainId}` : 'Not detected'}</b></div><div className="wallet-line"><span>USDC balance</span><b>{balance} USDC</b></div></section><section className="panel"><span className="eyebrow">Contracts</span><div className="contract-line"><span>BatchEscrow</span><code>{ESCROW_ADDRESS ? shortenAddress(ESCROW_ADDRESS) : 'Not configured'}</code></div><div className="contract-line"><span>Monad testnet USDC</span><code>{USDC_ADDRESS ? shortenAddress(USDC_ADDRESS) : 'Not configured'}</code></div><p className="form-help"><ShieldCheck size={14} /> All payout state is read from the deployed contracts. There is no app account database.</p></section></div></>
+}
 
 function PublicProof({ campaigns }: { campaigns: Campaign[] }) { const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); if (!campaign) return <div className="public-page"><Link to="/" className="wordmark">Escrow</Link><EmptyState title="Proof not found" body="This campaign is not indexed yet." /></div>; return <div className="public-page"><header className="public-head"><Link to="/" className="wordmark">Escrow</Link><span className="pill green"><span className="status-dot" /> Public proof</span></header><main className="public-main"><span className="eyebrow">Campaign / {String(campaign.id).padStart(2, '0')}</span><h1>{campaign.title}</h1><p>{campaign.brief}</p><div className="public-stats"><div><b>{formatUnits(campaign.funded)}</b><span>USDC locked</span></div><div><b>{Number(campaign.joined)} / {Number(campaign.maxSlots)}</b><span>slots filled</span></div><div><b>{formatUnits(campaign.paid)}</b><span>USDC paid out</span></div></div><div className="public-ledger"><div className="panel-heading"><div><span className="eyebrow">Onchain slot ledger</span><h2>Proof timeline</h2></div><code>{shortenAddress(ESCROW_ADDRESS)}</code></div>{campaign.slots.map(s => <div className="public-row" key={s.slotId}><div className="slot-avatar">{s.slotId + 1}</div><div><b>{shortenAddress(s.kol)}</b><span>{s.proofUrl || 'No proof submitted yet'}</span></div><StatusBadge status={s.status} /></div>)}</div><div className="public-footer"><span>Deadline {fmtDate(campaign.deadline)}</span><span>Review timeout {Number(campaign.reviewTimeout) / 3600}h</span><span>Maximum payout {formatUnits(campaign.payout)} USDC</span></div></main></div> }
 
