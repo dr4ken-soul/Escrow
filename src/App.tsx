@@ -955,16 +955,21 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                     )}
                   </div>
                 )}
-                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.08))', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '0.45rem' }}>
                   <Button 
                     variant="quiet" 
                     onClick={handleHideCampaign} 
-                    disabled={Boolean(busy)}
+                    disabled={Boolean(busy) || locked > 0n}
                     icon={<X size={14} />}
-                    style={{ color: 'var(--rejected, #e05f5f)', opacity: 0.85, width: '100%', justifyContent: 'center' }}
+                    style={{ color: 'var(--rejected, #e05f5f)', opacity: locked === 0n ? 0.85 : 0.4, width: '100%', justifyContent: 'center' }}
                   >
                     Archive / Hide campaign
                   </Button>
+                  {locked > 0n && (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted, #859199)', textAlign: 'center', lineHeight: 1.4 }}>
+                      Cannot archive: campaign has active locked budget of <b>{formatUnits(locked)} USDC</b>. Release or withdraw budget first.
+                    </span>
+                  )}
                 </div>
               </>
             ) : mySlot ? (
