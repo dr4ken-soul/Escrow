@@ -213,3 +213,12 @@ body{transition:background-color .22s ease,color .22s ease}
 /* light theme: sidebar was a dark slab on the cream app -> make it a light surface with readable text */
 :root[data-theme="light"] .sidebar{background:var(--bg-secondary);backdrop-filter:none}
 :root[data-theme="light"] .side-link.active{box-shadow:inset 0 0 0 1px rgba(154,103,28,.28)}
+
+/* light theme: button contrast overrides */
+:root[data-theme="light"] .button-primary,
+:root[data-theme="light"] .connect-btn-sidebar {
+  color: #ffffff;
+}
+:root[data-theme="light"] .button-outline {
+  background: var(--bg-surface);
+}
