@@ -722,7 +722,7 @@ function PublicProof({ campaigns }: { campaigns: Campaign[] }) { const { id } = 
 function RouteLoading() { return <div className="route-loading"><div className="loading-bar" /><span className="eyebrow">Checking wallet session</span></div> }
 
 function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
-  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState('')
+  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState(''); const [customFundAmount, setCustomFundAmount] = useState('')
   if (!campaign) return <EmptyState title="Campaign not found" body="This campaign is not indexed yet or the address is incorrect." action={<Button to="/app/campaigns">Back to campaigns</Button>} />
   const isAgency = wallet.account?.toLowerCase() === campaign.agency.toLowerCase(); const mySlot = campaign.slots.find(s => s.kol.toLowerCase() === wallet.account?.toLowerCase() && s.status !== 5); const canJoin = !isAgency && !mySlot && !isPast(campaign.deadline) && campaign.joined < campaign.maxSlots && Boolean(wallet.account); const agencyInviteCode = isAgency && campaign.inviteOnly ? window.localStorage.getItem(`escrow:invite:${campaign.id}`) || '' : ''; const locked = campaign.funded >= campaign.paid + campaign.withdrawn ? campaign.funded - campaign.paid - campaign.withdrawn : 0n
   const act = async (name: Parameters<typeof sendTransaction>[1], args: readonly unknown[] = [], token = false) => { if (!wallet.account) { void wallet.connect(); return } setBusy(name); setMessage(''); setTxHash(''); try { const hash = await sendTransaction(wallet.account, name, args, token); setTxHash(hash); setMessage(`Confirmed onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Transaction failed.'); setBusy('') } }
@@ -748,6 +748,26 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
         setBusy('Funding campaign')
         const hash = await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), shortfall])
         setTxHash(hash); setMessage(`Campaign topped up: ${shortenAddress(hash)}`); setBusy(''); onRefresh()
+      }
+    } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') }
+  }
+  const fundCustom = async (amountStr: string) => {
+    if (!wallet.account) { void wallet.connect(); return }
+    const amount = toUnits(amountStr);
+    if (amount <= 0n) { setMessage('Enter an amount greater than zero.'); return }
+    setBusy('Approving USDC'); setMessage(''); setTxHash('');
+    try {
+      if (campaign.funded === 0n) {
+        const totalNeeded = campaign.payout * campaign.maxSlots
+        await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, totalNeeded], true)
+        setBusy('Funding campaign')
+        const hash = await sendTransaction(wallet.account, 'fundCampaign', [BigInt(campaign.id)])
+        setTxHash(hash); setMessage(`Campaign funded: ${shortenAddress(hash)}`); setCustomFundAmount(''); setBusy(''); onRefresh()
+      } else {
+        await sendTransaction(wallet.account, 'approve', [ESCROW_ADDRESS, amount], true)
+        setBusy('Funding campaign')
+        const hash = await sendTransaction(wallet.account, 'fundAdditional', [BigInt(campaign.id), amount])
+        setTxHash(hash); setMessage(`Funded additional ${amountStr} USDC: ${shortenAddress(hash)}`); setCustomFundAmount(''); setBusy(''); onRefresh()
       }
     } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') }
   }
@@ -878,6 +898,25 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                   <Button onClick={() => void act('withdrawUnused', [BigInt(campaign.id)])} disabled={Boolean(busy)}>
                     {busy || 'Withdraw unused budget'}<ArrowRight size={15} />
                   </Button>
+                )}
+                {campaign.funded > 0n && !isPast(campaign.deadline) && (
+                  <div className="custom-fund-card" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.1))' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.8, marginBottom: '0.5rem' }}>Fund additional budget (USDC)</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input 
+                        type="number" 
+                        min="0.01" 
+                        step="0.01" 
+                        placeholder="Amount" 
+                        value={customFundAmount} 
+                        onChange={e => setCustomFundAmount(e.target.value)} 
+                        style={{ flex: 1, padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--border, rgba(255,255,255,0.15))', background: 'rgba(0,0,0,0.2)', color: 'white' }}
+                      />
+                      <Button onClick={() => void fundCustom(customFundAmount)} disabled={Boolean(busy) || !customFundAmount} icon={<Zap size={14} />}>
+                        Fund
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </>
             ) : mySlot ? (
