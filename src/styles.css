@@ -65,3 +65,6 @@ body{transition:background-color .22s ease,color .22s ease}
 @media (max-width:560px){.app-top-actions{gap:.45rem}.theme-toggle-label{display:none}.theme-toggle{padding:.32rem}.slot-row{grid-template-columns:1fr}.slot-action{grid-column:1;justify-content:flex-start;align-items:flex-start}.review-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.review-actions input{grid-column:1 / -1;grid-row:1;width:100%}.review-actions .button{width:100%}}
 /* light theme: side panels read as clean, consistent cards on the cream bg */
 :root[data-theme="light"] .panel,:root[data-theme="light"] .action-panel,:root[data-theme="light"] .preview-panel{background:var(--bg-surface);box-shadow:0 1px 2px rgba(27,36,40,.05),0 10px 30px rgba(27,36,40,.06)}
+/* light theme: sidebar was a dark slab on the cream app -> make it a light surface with readable text */
+:root[data-theme="light"] .sidebar{background:var(--bg-secondary);backdrop-filter:none}
+:root[data-theme="light"] .side-link.active{box-shadow:inset 0 0 0 1px rgba(154,103,28,.28)}
