@@ -134,7 +134,6 @@ function useCampaigns(refreshKey: number) {
     setLoading(true)
     try {
       const count = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'campaignCount' }) as bigint
-      console.log('Fetching campaigns count:', count)
       const stored = window.localStorage.getItem('escrow:hidden-campaigns')
       const hiddenIds = stored ? JSON.parse(stored) as number[] : []
       const next: Campaign[] = []
@@ -157,7 +156,6 @@ function useCampaigns(refreshKey: number) {
           console.error(`Error loading campaign ${id}:`, campErr)
         }
       }
-      console.log('Loaded campaigns successfully:', next)
       setCampaigns(next.reverse())
     } catch (err) {
       console.error('Failed to load campaigns:', err)
@@ -572,8 +570,6 @@ function CampaignList({ campaigns, account, loading }: { campaigns: Campaign[]; 
     // 2. Try parsing as a raw code (hash lookup)
     try {
       const codeHash = keccak256(toBytes(trimVal));
-      console.log('Searching code:', trimVal, 'hash:', codeHash);
-      console.log('Available campaigns hashes:', campaigns.map(c => ({ id: c.id, hash: c.inviteCodeHash, inviteOnly: c.inviteOnly })));
       const found = campaigns.find(c => c.inviteCodeHash === codeHash);
       if (found) {
         navigate(`/app/campaigns/${found.id}?code=${trimVal}`);

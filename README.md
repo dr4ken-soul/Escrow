@@ -1,73 +1,85 @@
-# Escrow
+# Escrow — onchain batch escrow for KOL campaigns
 
-Escrow is a wallet-connected batch escrow for KOL campaign payouts. An agency locks a fixed budget in Monad testnet USDC before work begins. KOLs claim open or invite-code slots, submit a proof URL, and receive the assigned payout after approval or after a review timeout.
+**Live demo:** https://escrow-campaign.vercel.app · **Network:** Monad testnet (chain 10143) · **Settlement:** USDC
 
-The project is the Spark hackathon V1: Monad Testnet USDC, fixed-payout campaigns, invite-code access, removable slots, and adjustable pre-submission payouts.
+Escrow locks a marketing campaign's full budget onchain *before* any work happens, then releases each KOL's fixed payout the moment their post is approved — or automatically if the agency goes silent. No invoices, no upfront trust, no chasing payment.
 
-## What is real in V1
+Built for the **Spark hackathon** (Build Anything, on Monad).
 
-- `MockUSDC.sol`: local-only ERC-20 fixture for Solidity tests.
-- `BatchEscrow.sol`: funded campaigns, campaign-specific roles, open slot claiming, proof URLs, approval, rejection, timeout claims, and unused budget withdrawal.
-- React frontend: wallet connection through an injected EVM wallet, contract reads through Monad RPC, and signed transaction flows for every state change.
-- Public proof page at `/campaigns/:id/proof`.
+## The problem
 
-The agency wallet is assigned by creating the campaign. There is no separate username/password account. The contract prevents the campaign creator from becoming a KOL in that same campaign.
+KOL campaign payments run on trust. An agency either pays upfront and risks the KOL never posting, or the KOL posts first and chases payment for days. Both sides burn time on invoices, payment screenshots, and "checking with finance."
+
+## The solution
+
+The agency deposits the whole budget into the `BatchEscrow` contract upfront. KOLs can see the money is locked and waiting. Each KOL submits a public proof URL; the agency approves and the contract pays that KOL instantly. If the agency never reviews, the KOL can claim after a review timeout — so the escrow never degrades back into "just trust the agency to click approve." Unclaimed or unused budget returns to the agency.
+
+## How it works
+
+1. **Create (private).** The agency creates a campaign and locks `payout × slots` of USDC. Every campaign is invite-only — the app generates a one-time invite code + share link, and the campaign is never listed publicly in the app.
+2. **Invite.** The agency shares the code/link privately with the KOLs it wants.
+3. **Join.** A KOL opens the link and registers a wallet for a slot with the code. Identity = wallet address; no signup, no password.
+4. **Per-KOL pricing.** Before a KOL submits proof, the agency can adjust that individual slot's payout (e.g. 50 USDC for one, 200 for another) and top up escrow if needed.
+5. **Prove.** The KOL publishes the post, then submits the public proof URL.
+6. **Settle.** Approve → instant payout. Reject → the KOL resubmits. Silence past the review window → the KOL claims via timeout.
+7. **Reclaim.** The agency can release the budget of unclaimed slots at any time (`releaseUnfilled`), or withdraw remaining unused budget after the deadline. Pending submissions stay reserved until they are reviewed or timeout-claimed.
+
+## Key properties
+
+- **Onchain-first, zero backend.** Budget, slot ownership, proof URLs, payouts, and the review timeout all live in `BatchEscrow` on Monad. The frontend only reads the chain and signs transactions. The chain is the database.
+- **Private by design.** Invite-only campaigns; in the app a KOL sees only their own slot, and payouts are hidden from other KOLs. (Everything is public onchain — the app hides it at the UI layer, while a dedicated `/campaigns/:id/proof` page exposes campaign state deliberately for public verification.)
+- **Fair to both sides.** Budget is locked before work begins; the timeout claim protects the KOL from a silent agency.
+- **Generic ERC-20.** The contract works with any ERC-20; on Monad testnet it settles in USDC.
+
+## Deployed contracts (Monad testnet · chain 10143)
+
+| Contract | Address |
+| --- | --- |
+| BatchEscrow | [`0x95f9dc5DAF89e36Fae922538525063720e2fc960`](https://testnet.monadexplorer.com/address/0x95f9dc5DAF89e36Fae922538525063720e2fc960) |
+| USDC | [`0x534b2f3A21130d7a60830c2Df862319e593943A3`](https://testnet.monadexplorer.com/address/0x534b2f3A21130d7a60830c2Df862319e593943A3) |
 
 ## Local setup
 
 ```bash
 npm install
-Copy-Item .env.example .env
+cp .env.example .env      # then fill in the addresses below
 npm run contracts:compile
 npm run dev
 ```
 
-Add deployed addresses to `.env` before connecting the frontend:
-
 ```env
 VITE_MONAD_RPC_URL=https://testnet-rpc.monad.xyz
-VITE_BATCH_ESCROW_ADDRESS=0x832c0c1bc199f849b68120b83d7e92d3089e6ea3
+VITE_BATCH_ESCROW_ADDRESS=0x95f9dc5DAF89e36Fae922538525063720e2fc960
 VITE_USDC_ADDRESS=0x534b2f3A21130d7a60830c2Df862319e593943A3
 ```
 
-## Monad Testnet deployment
+Connect any injected EVM wallet (MetaMask) on Monad testnet. The agency wallet needs testnet **MON** (gas) and **USDC** (budget). Get testnet USDC from Circle's faucet (https://faucet.circle.com).
 
-Fund a deployer wallet with testnet MON, then add its private key to `.env` locally. Never commit the key.
+## Deploy your own
+
+Fund a deployer wallet with testnet MON, add its key to `.env` locally (never commit it), then run the deploy script:
 
 ```env
 MONAD_RPC_URL=https://testnet-rpc.monad.xyz
 DEPLOYER_PRIVATE_KEY=0x...
 ```
 
-The deployment script is intentionally explicit:
-
 ```bash
 npm run deploy:testnet
 ```
 
-The current BatchEscrow deployment is `0x832c0c1bc199f849b68120b83d7e92d3089e6ea3`. Keep the Monad testnet USDC address above, and restart Vite after changing environment variables. The agency wallet must hold testnet USDC and MON for funding, payout adjustments, approvals, and gas transactions.
+Point `VITE_BATCH_ESCROW_ADDRESS` at the printed address and restart Vite.
 
-## Demo path
-
-1. Agency wallet creates a public or private campaign, for example 10 slots at 100 USDC.
-2. Agency approves the BatchEscrow contract to spend the calculated USDC budget, then locks the full budget.
-3. Switch to a second wallet and claim a slot.
-4. Submit a public proof URL. Private campaigns require the agency-generated invite code when joining.
-5. Switch back to the agency wallet, adjust an unsubmitted slot payout if needed, then approve or reject the proof.
-6. Open the public proof route to show the slot ledger and payout state.
-
-The timeout claim is available after the configured review window. Unused budget can be withdrawn by the agency after the campaign deadline; pending proofs remain reserved until they are approved or timeout-claimed.
-
-## Verification
+## Verify
 
 ```bash
-npm run build
-npm run contracts:compile
-npm test
+npm run build             # type-checks and bundles the frontend
+npm run contracts:compile # compiles the Solidity sources
 ```
 
-`npm run build` type-checks and bundles the frontend. `npm run contracts:compile` verifies both Solidity sources. The live transaction flow still requires a Monad testnet deployment and wallet-funded smoke test.
+## Contracts
 
-## Stretch roadmap
+- **`BatchEscrow.sol`** — campaigns, invite-code slot claiming, per-slot adjustable payouts, proof submission, approval/rejection, timeout claim, `releaseUnfilled` (reclaim unclaimed-slot budget anytime), and post-deadline `withdrawUnused`. Works with any ERC-20.
+- **`MockUSDC.sol`** — a local ERC-20 fixture for Solidity tests only. The live app settles in real Monad testnet USDC.
 
-The 40/40/20 milestone payout preset, agency profile metadata, and social proof cards are documented in [FUTURE_UPDATES.md](./FUTURE_UPDATES.md). Invite-code campaigns are already included in the V1 contract surface.
+The agency wallet is assigned by creating the campaign; the contract blocks the campaign creator from becoming a KOL in its own campaign. There is no separate account system — every action is a signed transaction from a wallet.
