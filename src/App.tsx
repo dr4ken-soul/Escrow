@@ -357,6 +357,7 @@ function Overview({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wal
 
   const hasAgency = mine.length > 0
   const hasKOL = joined.length > 0
+  const numCards = (hasAgency ? 2 : 0) + (hasKOL ? 3 : 0) || 3
 
   return (
     <>
@@ -372,7 +373,7 @@ function Overview({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wal
       />
 
       {/* KPIs Grid */}
-      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${hasAgency && hasKOL ? 4 : 3}, 1fr)`, marginBottom: '2rem' }}>
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${numCards}, 1fr)`, marginBottom: '2rem' }}>
         {hasAgency && (
           <>
             <div>
