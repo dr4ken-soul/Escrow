@@ -126,19 +126,34 @@ function useCampaigns(refreshKey: number) {
     setLoading(true)
     try {
       const count = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'campaignCount' }) as bigint
+      console.log('Fetching campaigns count:', count)
       const next: Campaign[] = []
       for (let id = 0; id < Number(count); id += 1) {
-        const raw = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getCampaign', args: [BigInt(id)] }) as { agency: Address; token: Address; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; inviteCodeHash: string }
-        const slotCount = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlotCount', args: [BigInt(id)] }) as bigint
-        const slots: Slot[] = []
-        for (let slotId = 0; slotId < Number(slotCount); slotId += 1) {
-          const slot = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlot', args: [BigInt(id), BigInt(slotId)] }) as { kol: Address; proofUrl: string; note: string; rejectionReason: string; payout: bigint; submittedAt: bigint; status: number; paid: boolean }
-          slots.push({ kol: slot.kol, proofUrl: slot.proofUrl, note: slot.note, rejectionReason: slot.rejectionReason, payout: slot.payout, submittedAt: slot.submittedAt, status: Number(slot.status), paid: slot.paid, slotId })
+        try {
+          const raw = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getCampaign', args: [BigInt(id)] }) as { agency: Address; token: Address; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; inviteCodeHash: string }
+          const slotCount = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlotCount', args: [BigInt(id)] }) as bigint
+          const slots: Slot[] = []
+          for (let slotId = 0; slotId < Number(slotCount); slotId += 1) {
+            try {
+              const slot = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlot', args: [BigInt(id), BigInt(slotId)] }) as { kol: Address; proofUrl: string; note: string; rejectionReason: string; payout: bigint; submittedAt: bigint; status: number; paid: boolean }
+              slots.push({ kol: slot.kol, proofUrl: slot.proofUrl, note: slot.note, rejectionReason: slot.rejectionReason, payout: slot.payout, submittedAt: slot.submittedAt, status: Number(slot.status), paid: slot.paid, slotId })
+            } catch (slotErr) {
+              console.error(`Error loading slot ${slotId} for campaign ${id}:`, slotErr)
+            }
+          }
+          next.push({ id, agency: raw.agency, token: raw.token, title: raw.title, brief: raw.brief, payout: raw.payout, maxSlots: raw.maxSlots, deadline: raw.deadline, reviewTimeout: raw.reviewTimeout, funded: raw.funded, paid: raw.paid, withdrawn: raw.withdrawn, joined: raw.joined, createdAt: raw.createdAt, inviteOnly: raw.inviteOnly, inviteCodeHash: raw.inviteCodeHash, slots })
+        } catch (campErr) {
+          console.error(`Error loading campaign ${id}:`, campErr)
         }
-        next.push({ id, agency: raw.agency, token: raw.token, title: raw.title, brief: raw.brief, payout: raw.payout, maxSlots: raw.maxSlots, deadline: raw.deadline, reviewTimeout: raw.reviewTimeout, funded: raw.funded, paid: raw.paid, withdrawn: raw.withdrawn, joined: raw.joined, createdAt: raw.createdAt, inviteOnly: raw.inviteOnly, inviteCodeHash: raw.inviteCodeHash, slots })
       }
+      console.log('Loaded campaigns successfully:', next)
       setCampaigns(next.reverse())
-    } catch { setCampaigns([]) } finally { setLoading(false) }
+    } catch (err) {
+      console.error('Failed to load campaigns:', err)
+      setCampaigns([])
+    } finally {
+      setLoading(false)
+    }
   }, [refreshKey])
   useEffect(() => { void load() }, [load])
   return { campaigns, loading, reload: load }
