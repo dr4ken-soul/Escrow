@@ -349,8 +349,8 @@ function Overview({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wal
 
   // KOL metrics
   const kolSlots = joined.map(c => c.slots.find(s => s.kol.toLowerCase() === acc && s.status !== 5)!)
-  const earnedKOL = kolSlots.filter(s => s.status === 4).reduce((sum, s) => sum + s.payout, 0n)
-  const pendingKOL = kolSlots.filter(s => s.status !== 4 && s.status !== 5).reduce((sum, s) => sum + s.payout, 0n)
+  const earnedKOL = kolSlots.filter(s => s.paid).reduce((sum, s) => sum + s.payout, 0n)
+  const pendingKOL = kolSlots.filter(s => !s.paid).reduce((sum, s) => sum + s.payout, 0n)
 
   const hasAgency = mine.length > 0
   const hasKOL = joined.length > 0
