@@ -751,7 +751,9 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
       }
     } catch (err) { setMessage(err instanceof Error ? err.message : 'Fund failed.'); setBusy('') }
   }
-  const requiredBudget = campaign.payout * campaign.maxSlots
+  const reservedForJoined = campaign.slots.filter(s => !s.paid && s.status !== 5).reduce((sum, s) => sum + s.payout, 0n)
+  const requiredForUnfilled = campaign.payout * (campaign.maxSlots - campaign.joined)
+  const requiredBudget = reservedForJoined + requiredForUnfilled
   const needsFunding = isAgency && locked < requiredBudget && campaign.maxSlots > campaign.joined
   // isEnded: all funds accounted for (paid out or released back)
   const isEnded = getCampaignStatus(campaign) === 'ended'
@@ -933,9 +935,60 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
 }
 
 function SlotRowV3({ slot, isAgency, isOwn, busy, onApprove, onReject, onRemove, onSetPayout, rejectReason, setRejectReason }: { slot: Slot; isAgency: boolean; isOwn: boolean; busy: string; onApprove: () => void; onReject: () => void; onRemove: () => void; onSetPayout: (value: string) => void; rejectReason: string; setRejectReason: (x: string) => void }) {
-  const [payout, setPayout] = useState(formatUnits(slot.payout)); const editable = isAgency && (slot.status === 0 || slot.status === 3); const visiblePayout = isAgency || isOwn ? `${formatUnits(slot.payout)} USDC` : 'Payout hidden'
+  const [payout, setPayout] = useState(formatUnits(slot.payout));
+  const [editing, setEditing] = useState(false);
+  const editable = isAgency && (slot.status === 0 || slot.status === 3);
+  const visiblePayout = isAgency || isOwn ? `${formatUnits(slot.payout)} USDC` : 'Payout hidden'
   useEffect(() => setPayout(formatUnits(slot.payout)), [slot.payout])
-  return <div className="slot-row"><div className="slot-person"><div className="slot-avatar">{slot.slotId + 1}</div><div><b>{shortenAddress(slot.kol)}</b><span>Slot {String(slot.slotId + 1).padStart(2, '0')} · {visiblePayout}</span></div></div><div className="slot-proof">{slot.proofUrl ? <a href={slot.proofUrl} target="_blank" rel="noreferrer"><Link2 size={14} />{slot.proofUrl.replace(/^https?:\/\//, '').slice(0, 34)} <ExternalLink size={12} /></a> : <span className="muted-text">Awaiting proof</span>}{slot.note && <p>{slot.note}</p>}{slot.rejectionReason && <p className="rejection-copy">{slot.rejectionReason}</p>}</div><div className="slot-action"><StatusBadge status={slot.status} />{editable && <div className="review-actions"><input type="number" min="0.01" step="0.01" value={payout} onChange={e => setPayout(e.target.value)} aria-label="Slot payout in USDC" /><Button onClick={() => onSetPayout(payout)} disabled={Boolean(busy)}>Save payout</Button><Button variant="danger" onClick={onRemove} disabled={Boolean(busy)} icon={<X size={14} />}>Remove</Button></div>}{isAgency && slot.status === 1 && <div className="review-actions"><Button onClick={onApprove} disabled={Boolean(busy)} icon={<Check size={14} />}>Approve</Button><input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Reason to reject" aria-label="Rejection reason" /><Button variant="danger" onClick={onReject} disabled={Boolean(busy)} icon={<X size={14} />}>Reject</Button></div>}</div></div>
+  return (
+    <div className="slot-row">
+      <div className="slot-person">
+        <div className="slot-avatar">{slot.slotId + 1}</div>
+        <div>
+          <b>{shortenAddress(slot.kol)}</b>
+          <span>Slot {String(slot.slotId + 1).padStart(2, '0')} · {visiblePayout}</span>
+        </div>
+      </div>
+      <div className="slot-proof">
+        {slot.proofUrl ? (
+          <a href={slot.proofUrl} target="_blank" rel="noreferrer">
+            <Link2 size={14} />
+            {slot.proofUrl.replace(/^https?:\/\//, '').slice(0, 34)} <ExternalLink size={12} />
+          </a>
+        ) : (
+          <span className="muted-text">Awaiting proof</span>
+        )}
+        {slot.note && <p>{slot.note}</p>}
+        {slot.rejectionReason && <p className="rejection-copy">{slot.rejectionReason}</p>}
+      </div>
+      <div className="slot-action">
+        <StatusBadge status={slot.status} />
+        {editable && (
+          <div className="review-actions">
+            {!editing ? (
+              <>
+                <Button variant="quiet" onClick={() => setEditing(true)}>Edit payout</Button>
+                <Button variant="danger" onClick={onRemove} disabled={Boolean(busy)} icon={<X size={14} />}>Remove</Button>
+              </>
+            ) : (
+              <>
+                <input type="number" min="0.01" step="0.01" value={payout} onChange={e => setPayout(e.target.value)} aria-label="Slot payout in USDC" style={{ width: '80px' }} />
+                <Button onClick={() => { onSetPayout(payout); setEditing(false) }} disabled={Boolean(busy)}>Save</Button>
+                <Button variant="quiet" onClick={() => setEditing(false)}>Cancel</Button>
+              </>
+            )}
+          </div>
+        )}
+        {isAgency && slot.status === 1 && (
+          <div className="review-actions">
+            <Button onClick={onApprove} disabled={Boolean(busy)} icon={<Check size={14} />}>Approve</Button>
+            <input value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Reason to reject" aria-label="Rejection reason" />
+            <Button variant="danger" onClick={onReject} disabled={Boolean(busy)} icon={<X size={14} />}>Reject</Button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function App() { const wallet = useWallet(); const { theme, toggleTheme } = useTheme(); const [refreshKey, setRefreshKey] = useState(0); const { campaigns, loading, reload } = useCampaigns(refreshKey); const refresh = () => { setRefreshKey(x => x + 1); void reload(); setTimeout(() => { void reload() }, 1500) }; const appRoute = !wallet.ready ? <RouteLoading /> : wallet.account ? <AppShell wallet={wallet} theme={theme} onToggleTheme={toggleTheme} refreshKey={refreshKey}><Routes><Route index element={<Overview campaigns={campaigns} wallet={wallet} onRefresh={refresh} />} /><Route path="campaigns" element={<CampaignList campaigns={campaigns} account={wallet.account} loading={loading} />} /><Route path="campaigns/new" element={<CreateCampaign wallet={wallet} onRefresh={refresh} />} /><Route path="campaigns/:id" element={<CampaignDetail campaigns={campaigns} wallet={wallet} onRefresh={refresh} />} /><Route path="campaigns/:id/proof" element={<PublicProof campaigns={campaigns} />} /><Route path="submissions" element={<ReviewQueue campaigns={campaigns} account={wallet.account} />} /><Route path="wallet" element={<WalletPage wallet={wallet} />} /></Routes></AppShell> : <Navigate to="/" replace />; return <Routes><Route path="/" element={<Landing wallet={wallet} theme={theme} onToggleTheme={toggleTheme} />} /><Route path="/campaigns/:id/proof" element={<PublicProof campaigns={campaigns} />} /><Route path="/app/*" element={appRoute} /></Routes> }
