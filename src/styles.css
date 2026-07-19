@@ -195,8 +195,6 @@
 :root{color-scheme:dark}
 :root[data-theme="light"]{color-scheme:light;--bg-primary:#f4f1ea;--bg-secondary:#e9e6de;--bg-surface:#fbfaf7;--bg-elevated:#ffffff;--accent:#9a671c;--accent-hover:#b47b27;--accent-glow:rgba(154,103,28,.13);--verified:#16875b;--verified-glow:rgba(22,135,91,.12);--pending:#9a671c;--rejected:#c34949;--text-primary:#1b2428;--text-secondary:#5d6870;--text-muted:#7b858b;--border-subtle:rgba(27,36,40,.09);--border-default:rgba(27,36,40,.16);--shadow:0 22px 70px rgba(33,37,37,.14)}
 body{transition:background-color .22s ease,color .22s ease}
-:root[data-theme="light"] .landing-nav{--text-primary:#f2f0ea;--text-secondary:#c2c9ce;--text-muted:#9ca5ab;--accent:#e0aa57;--accent-hover:#f3c778;--accent-glow:rgba(224,170,87,.16)}
-:root[data-theme="light"] .hero-section{--text-primary:#f2f0ea;--text-secondary:#c2c9ce;--text-muted:#9ca5ab;--accent:#e0aa57;--accent-hover:#f3c778;--accent-glow:rgba(224,170,87,.16);--verified:#68d7a2}
 :root[data-theme="light"] .wallet-dropdown{background:var(--bg-secondary);box-shadow:0 24px 70px rgba(33,37,37,.18)}
 :root[data-theme="light"] .landing-links.is-open{background:rgba(16,19,22,.96)}
 .app-top-actions{display:flex;align-items:center;gap:.7rem}
