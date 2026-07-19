@@ -372,6 +372,8 @@ function CampaignList({ campaigns, account, loading }: { campaigns: Campaign[]; 
     // 2. Try parsing as a raw code (hash lookup)
     try {
       const codeHash = keccak256(toBytes(trimVal));
+      console.log('Searching code:', trimVal, 'hash:', codeHash);
+      console.log('Available campaigns hashes:', campaigns.map(c => ({ id: c.id, hash: c.inviteCodeHash, inviteOnly: c.inviteOnly })));
       const found = campaigns.find(c => c.inviteCodeHash === codeHash);
       if (found) {
         navigate(`/app/campaigns/${found.id}?code=${trimVal}`);
