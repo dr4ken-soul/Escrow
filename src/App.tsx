@@ -7,7 +7,7 @@ import { keccak256, toBytes } from 'viem'
 import type { Address } from 'viem'
 
 type Slot = { kol: string; proofUrl: string; note: string; rejectionReason: string; payout: bigint; submittedAt: bigint; status: number; paid: boolean; slotId: number }
-type Campaign = { id: number; agency: string; token: string; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; slots: Slot[] }
+type Campaign = { id: number; agency: string; token: string; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; inviteCodeHash: string; slots: Slot[] }
 
 const statusNames = ['Open', 'Pending review', 'Approved', 'Rejected', 'Timeout claimed', 'Removed']
 const statusClass = ['open', 'pending', 'approved', 'rejected', 'claimed', 'removed']
@@ -128,14 +128,14 @@ function useCampaigns(refreshKey: number) {
       const count = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'campaignCount' }) as bigint
       const next: Campaign[] = []
       for (let id = 0; id < Number(count); id += 1) {
-        const raw = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getCampaign', args: [BigInt(id)] }) as { agency: Address; token: Address; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean }
+        const raw = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getCampaign', args: [BigInt(id)] }) as { agency: Address; token: Address; title: string; brief: string; payout: bigint; maxSlots: bigint; deadline: bigint; reviewTimeout: bigint; funded: bigint; paid: bigint; withdrawn: bigint; joined: bigint; createdAt: bigint; inviteOnly: boolean; inviteCodeHash: string }
         const slotCount = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlotCount', args: [BigInt(id)] }) as bigint
         const slots: Slot[] = []
         for (let slotId = 0; slotId < Number(slotCount); slotId += 1) {
           const slot = await publicClient.readContract({ address: ESCROW_ADDRESS, abi: escrowAbi, functionName: 'getSlot', args: [BigInt(id), BigInt(slotId)] }) as { kol: Address; proofUrl: string; note: string; rejectionReason: string; payout: bigint; submittedAt: bigint; status: number; paid: boolean }
           slots.push({ kol: slot.kol, proofUrl: slot.proofUrl, note: slot.note, rejectionReason: slot.rejectionReason, payout: slot.payout, submittedAt: slot.submittedAt, status: Number(slot.status), paid: slot.paid, slotId })
         }
-        next.push({ id, agency: raw.agency, token: raw.token, title: raw.title, brief: raw.brief, payout: raw.payout, maxSlots: raw.maxSlots, deadline: raw.deadline, reviewTimeout: raw.reviewTimeout, funded: raw.funded, paid: raw.paid, withdrawn: raw.withdrawn, joined: raw.joined, createdAt: raw.createdAt, inviteOnly: raw.inviteOnly, slots })
+        next.push({ id, agency: raw.agency, token: raw.token, title: raw.title, brief: raw.brief, payout: raw.payout, maxSlots: raw.maxSlots, deadline: raw.deadline, reviewTimeout: raw.reviewTimeout, funded: raw.funded, paid: raw.paid, withdrawn: raw.withdrawn, joined: raw.joined, createdAt: raw.createdAt, inviteOnly: raw.inviteOnly, inviteCodeHash: raw.inviteCodeHash, slots })
       }
       setCampaigns(next.reverse())
     } catch { setCampaigns([]) } finally { setLoading(false) }
@@ -311,7 +311,119 @@ function CampaignRows({ campaigns }: { campaigns: Campaign[] }) { return <div cl
 function PageHeading({ eyebrow, title, action }: { eyebrow: string; title: string; action?: React.ReactNode }) { return <div className="page-heading"><div><span className="eyebrow">{eyebrow}</span><h1>{title.replace(/[.!?,]+$/, '')}</h1></div>{action}</div> }
 function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) { return <div className="empty-state"><div className="empty-icon"><ShieldCheck size={19} /></div><h3>{title}</h3><p>{body}</p>{action}</div> }
 
-function CampaignList({ campaigns, account }: { campaigns: Campaign[]; account?: string }) { const acc = account?.toLowerCase(); const visible = campaigns.filter(c => c.agency.toLowerCase() === acc || c.slots.some(s => s.kol.toLowerCase() === acc)); return <><PageHeading eyebrow="Campaign directory" title="Your campaigns." action={<Button to="/app/campaigns/new" icon={<Plus size={16} />}>New campaign</Button>} /><div className="list-intro"><span><span className="status-dot" /> {visible.filter(c => !isPast(c.deadline)).length} private campaigns you can access</span><span className="mono">FIXED PAYOUT / INVITE ONLY</span></div>{visible.length ? <div className="directory-list">{visible.map(c => <Link to={`/app/campaigns/${c.id}`} className="directory-row" key={c.id}><div className="directory-number">{String(c.id + 1).padStart(2, '0')}</div><div className="directory-main"><div><h3>{c.title}</h3><p>{c.brief || 'Fixed-payout creator campaign on Monad testnet.'}</p></div><div className="directory-meta"><span><b>{formatUnits(c.payout)}</b> USDC max / KOL</span><span><b>{Number(c.joined)} / {Number(c.maxSlots)}</b> slots</span><span className={isPast(c.deadline) ? 'muted-text' : 'green-text'}>{isPast(c.deadline) ? 'closed' : `ends ${fmtDate(c.deadline)}`}</span></div></div><ArrowRight size={17} /></Link>)}</div> : <EmptyState title="No live campaigns" body={isConfigured ? 'Create a campaign or check again after a new one is funded.' : 'Once the contract addresses are configured, funded campaigns will appear here.'} action={<Button to="/app/campaigns/new">Create campaign</Button>} />}</> }
+function CampaignList({ campaigns, account }: { campaigns: Campaign[]; account?: string }) {
+  const acc = account?.toLowerCase();
+  const navigate = useNavigate();
+  const [inputCode, setInputCode] = useState('');
+  const [joinError, setJoinError] = useState('');
+
+  const handleJoinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setJoinError('');
+    const trimVal = inputCode.trim();
+    if (!trimVal) return;
+
+    // 1. Try parsing as a URL
+    try {
+      if (trimVal.startsWith('http://') || trimVal.startsWith('https://') || trimVal.includes('/app/campaigns/')) {
+        const parts = trimVal.split('?');
+        const urlPath = parts[0];
+        const search = parts[1] || '';
+        const pathParts = urlPath.split('/');
+        const idStr = pathParts[pathParts.length - 1];
+        const campaignId = Number(idStr);
+        if (isNaN(campaignId)) {
+          setJoinError('Invalid campaign ID in the link.');
+          return;
+        }
+        const params = new URLSearchParams(search);
+        const code = params.get('code') || '';
+        navigate(`/app/campaigns/${campaignId}?code=${code}`);
+        return;
+      }
+    } catch {
+      // Ignore URL parsing errors, proceed to code lookup
+    }
+
+    // 2. Try parsing as a raw code (hash lookup)
+    try {
+      const codeHash = keccak256(toBytes(trimVal));
+      const found = campaigns.find(c => c.inviteCodeHash === codeHash);
+      if (found) {
+        navigate(`/app/campaigns/${found.id}?code=${trimVal}`);
+      } else {
+        setJoinError('Campaign not found with this code. Check the code or paste the full share link.');
+      }
+    } catch (err) {
+      setJoinError('Error processing code. Please enter a valid code or full link.');
+    }
+  };
+
+  const visible = campaigns.filter(c => c.agency.toLowerCase() === acc || c.slots.some(s => s.kol.toLowerCase() === acc));
+
+  return (
+    <>
+      <PageHeading eyebrow="Campaign directory" title="Your campaigns." action={<Button to="/app/campaigns/new" icon={<Plus size={16} />}>New campaign</Button>} />
+      <div className="list-intro">
+        <span><span className="status-dot" /> {visible.filter(c => !isPast(c.deadline)).length} private campaigns you can access</span>
+        <span className="mono">FIXED PAYOUT / INVITE ONLY</span>
+      </div>
+      <div className="workspace-grid">
+        <div className="workspace-primary">
+          {visible.length ? (
+            <div className="directory-list">
+              {visible.map(c => (
+                <Link to={`/app/campaigns/${c.id}`} className="directory-row" key={c.id}>
+                  <div className="directory-number">{String(c.id + 1).padStart(2, '0')}</div>
+                  <div className="directory-main">
+                    <div>
+                      <h3>{c.title}</h3>
+                      <p>{c.brief || 'Fixed-payout creator campaign on Monad testnet.'}</p>
+                    </div>
+                    <div className="directory-meta">
+                      <span><b>{formatUnits(c.payout)}</b> USDC max / KOL</span>
+                      <span><b>{Number(c.joined)} / {Number(c.maxSlots)}</b> slots</span>
+                      <span className={isPast(c.deadline) ? 'muted-text' : 'green-text'}>
+                        {isPast(c.deadline) ? 'closed' : `ends ${fmtDate(c.deadline)}`}
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight size={17} />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="No live campaigns"
+              body={isConfigured ? 'Create a campaign or enter an invite code to access and claim a slot.' : 'Once the contract addresses are configured, funded campaigns will appear here.'}
+              action={<Button to="/app/campaigns/new">Create campaign</Button>}
+            />
+          )}
+        </div>
+        <aside className="workspace-side">
+          <section className="action-panel">
+            <span className="eyebrow">Join campaign</span>
+            <h3>Enter invite link or code</h3>
+            <p>Paste the invite code or the full share link shared by the agency to access the private campaign and claim your slot.</p>
+            <form onSubmit={handleJoinSubmit} style={{ marginTop: '1.25rem' }}>
+              <label>
+                Invite Link / Code
+                <input
+                  required
+                  value={inputCode}
+                  onChange={e => setInputCode(e.target.value)}
+                  placeholder="Paste invite link or code"
+                />
+              </label>
+              {joinError && <div className="form-message error">{joinError}</div>}
+              <Button type="submit">Access campaign</Button>
+            </form>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
+}
 
 function CreateCampaign({ wallet, onRefresh }: { wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
   const navigate = useNavigate(); const [title, setTitle] = useState(''); const [brief, setBrief] = useState(''); const [payout, setPayout] = useState('100'); const [slots, setSlots] = useState('10'); const [days, setDays] = useState('14'); const [timeout, setTimeoutValue] = useState('48'); const [busy, setBusy] = useState(''); const [createdId, setCreatedId] = useState<number>(); const [createdCode, setCreatedCode] = useState(''); const [copied, setCopied] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState('')
