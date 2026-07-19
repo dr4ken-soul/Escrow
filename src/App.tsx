@@ -722,7 +722,13 @@ function PublicProof({ campaigns }: { campaigns: Campaign[] }) { const { id } = 
 function RouteLoading() { return <div className="route-loading"><div className="loading-bar" /><span className="eyebrow">Checking wallet session</span></div> }
 
 function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
-  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState(''); const [customFundAmount, setCustomFundAmount] = useState('')
+  const { id } = useParams(); const campaign = campaigns.find(c => c.id === Number(id)); const [busy, setBusy] = useState(''); const [proof, setProof] = useState(''); const [note, setNote] = useState(''); const [inviteCode, setInviteCode] = useState(() => new URLSearchParams(window.location.search).get('code') || ''); const [rejectReason, setRejectReason] = useState(''); const [message, setMessage] = useState(''); const [txHash, setTxHash] = useState(''); const [customFundAmount, setCustomFundAmount] = useState(''); const [walletUsdc, setWalletUsdc] = useState<bigint | null>(null)
+  useEffect(() => {
+    if (!wallet.account || !USDC_ADDRESS) { setWalletUsdc(null); return }
+    publicClient.readContract({ address: USDC_ADDRESS, abi: tokenAbi, functionName: 'balanceOf', args: [wallet.account as Address] })
+      .then(balance => setWalletUsdc(balance as bigint))
+      .catch(() => setWalletUsdc(null))
+  }, [wallet.account, campaign, onRefresh])
   if (!campaign) return <EmptyState title="Campaign not found" body="This campaign is not indexed yet or the address is incorrect." action={<Button to="/app/campaigns">Back to campaigns</Button>} />
   const isAgency = wallet.account?.toLowerCase() === campaign.agency.toLowerCase(); const mySlot = campaign.slots.find(s => s.kol.toLowerCase() === wallet.account?.toLowerCase() && s.status !== 5); const canJoin = !isAgency && !mySlot && !isPast(campaign.deadline) && campaign.joined < campaign.maxSlots && Boolean(wallet.account); const agencyInviteCode = isAgency && campaign.inviteOnly ? window.localStorage.getItem(`escrow:invite:${campaign.id}`) || '' : ''; const locked = campaign.funded >= campaign.paid + campaign.withdrawn ? campaign.funded - campaign.paid - campaign.withdrawn : 0n
   const act = async (name: Parameters<typeof sendTransaction>[1], args: readonly unknown[] = [], token = false) => { if (!wallet.account) { void wallet.connect(); return } setBusy(name); setMessage(''); setTxHash(''); try { const hash = await sendTransaction(wallet.account, name, args, token); setTxHash(hash); setMessage(`Confirmed onchain: ${shortenAddress(hash)}`); setBusy(''); onRefresh() } catch (err) { setMessage(err instanceof Error ? err.message : 'Transaction failed.'); setBusy('') } }
@@ -881,9 +887,14 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                   <div className="fund-campaign-card" style={{ background: 'var(--surface-2, rgba(255,200,50,0.08))', border: '1px solid var(--warning-border, rgba(255,200,50,0.25))', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
                     <span className="eyebrow" style={{ color: 'var(--warning-text, #f5c542)' }}>⚠ Campaign needs funding</span>
                     <p style={{ fontSize: '0.85rem', opacity: 0.8, margin: '0.35rem 0 0.75rem' }}>This campaign requires <b>{formatUnits(requiredBudget - locked)} USDC</b> to cover {Number(campaign.maxSlots - campaign.joined)} unfilled slot{Number(campaign.maxSlots - campaign.joined) > 1 ? 's' : ''}. KOLs cannot join until the budget is funded.</p>
-                    <Button onClick={() => void fundCampaign()} disabled={Boolean(busy)} icon={<Zap size={15} />}>
+                    <Button onClick={() => void fundCampaign()} disabled={Boolean(busy) || (walletUsdc !== null && walletUsdc < requiredBudget - locked)} icon={<Zap size={15} />}>
                       {busy || `Fund ${formatUnits(requiredBudget - locked)} USDC`}
                     </Button>
+                    {walletUsdc !== null && walletUsdc < requiredBudget - locked && (
+                      <div style={{ color: 'var(--rejected, #e05f5f)', fontSize: '0.76rem', marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
+                        <span>⚠ Not enough USDC (Your balance: {formatUnits(walletUsdc)} USDC)</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 {isReleasedClosed && (
@@ -916,10 +927,15 @@ function CampaignDetailV3({ campaigns, wallet, onRefresh }: { campaigns: Campaig
                         onChange={e => setCustomFundAmount(e.target.value)} 
                         style={{ flex: 1, padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid var(--border, rgba(255,255,255,0.15))', background: 'rgba(0,0,0,0.2)', color: 'white' }}
                       />
-                      <Button onClick={() => void fundCustom(customFundAmount)} disabled={Boolean(busy) || !customFundAmount} icon={<Zap size={14} />}>
+                      <Button onClick={() => void fundCustom(customFundAmount)} disabled={Boolean(busy) || !customFundAmount || (walletUsdc !== null && toUnits(customFundAmount) > walletUsdc)} icon={<Zap size={14} />}>
                         Fund
                       </Button>
                     </div>
+                    {walletUsdc !== null && customFundAmount && toUnits(customFundAmount) > walletUsdc && (
+                      <div style={{ color: 'var(--rejected, #e05f5f)', fontSize: '0.74rem', marginTop: '0.45rem', fontWeight: 600 }}>
+                        <span>⚠ Not enough USDC (Your balance: {formatUnits(walletUsdc)} USDC)</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
