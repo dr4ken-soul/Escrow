@@ -233,3 +233,12 @@ body{transition:background-color .22s ease,color .22s ease}
 :root[data-theme="light"] .button-outline {
   background: var(--bg-surface);
 }
+
+.action-panel button[type="submit"],
+.action-panel .button[type="submit"],
+.action-panel label + button,
+.action-panel label + .button,
+.action-panel p + button,
+.action-panel p + .button {
+  margin-top: 1.25rem;
+}
