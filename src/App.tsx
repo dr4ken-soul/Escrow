@@ -331,10 +331,178 @@ function AppShell({ wallet, theme, onToggleTheme, children, refreshKey }: { wall
 }
 
 function Overview({ campaigns, wallet, onRefresh }: { campaigns: Campaign[]; wallet: ReturnType<typeof useWallet>; onRefresh: () => void }) {
-  const mine = campaigns.filter(c => c.agency.toLowerCase() === wallet.account?.toLowerCase())
-  const pending = mine.flatMap(c => c.slots.filter(s => s.status === 1)).length
-  const locked = mine.reduce((sum, c) => sum + c.funded - c.paid - c.withdrawn, 0n)
-  return <><PageHeading eyebrow="Workspace overview" title="Keep the proof moving." action={<Button to="/app/campaigns/new" icon={<Plus size={16} />}>New campaign</Button>} /><div className="kpi-grid"><div><span>CAMPAIGNS OWNED</span><b>{mine.length.toString().padStart(2, '0')}</b><small>campaign creator role</small></div><div><span>FUNDS IN ESCROW</span><b>{formatUnits(locked)} <i>USDC</i></b><small>reserved across your campaigns</small></div><div><span>REVIEW QUEUE</span><b>{pending.toString().padStart(2, '0')}</b><small>proofs waiting on agency</small></div><div><span>NETWORK</span><b>MONAD</b><small>testnet · 10143</small></div></div><div className="dashboard-grid"><section className="panel"><div className="panel-heading"><div><span className="eyebrow">Your campaigns</span><h2>Active work</h2></div><Button variant="quiet" to="/app/campaigns" icon={<ArrowRight size={15} />}>View all</Button></div>{mine.length ? <CampaignRows campaigns={mine.slice(0, 4)} /> : <EmptyState title="No campaigns yet" body="Create the first fixed-payout campaign and lock the budget before inviting work." action={<Button to="/app/campaigns/new">Create campaign</Button>} />}</section><aside className="action-panel"><span className="eyebrow">Quick start</span><h3>What needs doing?</h3><div className="quick-actions"><Link to="/app/campaigns/new"><Plus size={17} /><span><b>Create a campaign</b><small>Lock a fixed budget</small></span><ArrowRight size={15} /></Link><Link to="/app/campaigns"><Clipboard size={17} /><span><b>Find open work</b><small>Claim a KOL slot</small></span><ArrowRight size={15} /></Link><button onClick={onRefresh}><RefreshCw size={17} /><span><b>Refresh chain state</b><small>Read current events</small></span><ArrowRight size={15} /></button></div></aside></div></>
+  const acc = wallet.account?.toLowerCase()
+  const mine = campaigns.filter(c => c.agency.toLowerCase() === acc)
+  const joined = campaigns.filter(c => c.slots.some(s => s.kol.toLowerCase() === acc && s.status !== 5))
+
+  // Agency metrics
+  const pendingAgency = mine.flatMap(c => c.slots.filter(s => s.status === 1)).length
+  const lockedAgency = mine.reduce((sum, c) => sum + c.funded - c.paid - c.withdrawn, 0n)
+
+  // KOL metrics
+  const kolSlots = joined.map(c => c.slots.find(s => s.kol.toLowerCase() === acc && s.status !== 5)!)
+  const earnedKOL = kolSlots.filter(s => s.status === 4).reduce((sum, s) => sum + s.payout, 0n)
+  const pendingKOL = kolSlots.filter(s => s.status !== 4 && s.status !== 5).reduce((sum, s) => sum + s.payout, 0n)
+
+  const hasAgency = mine.length > 0
+  const hasKOL = joined.length > 0
+
+  return (
+    <>
+      <PageHeading 
+        eyebrow="Workspace overview" 
+        title={hasAgency && !hasKOL ? "Agency dashboard." : !hasAgency && hasKOL ? "KOL dashboard." : "Your workspace."} 
+        action={
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button to="/app/campaigns/new" icon={<Plus size={16} />}>New campaign</Button>
+            <Button to="/app/campaigns" icon={<Clipboard size={16} />} variant="outline">Browse campaigns</Button>
+          </div>
+        } 
+      />
+
+      {/* KPIs Grid */}
+      <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${hasAgency && hasKOL ? 4 : 3}, 1fr)`, marginBottom: '2rem' }}>
+        {hasAgency && (
+          <>
+            <div>
+              <span>CAMPAIGNS OWNED</span>
+              <b>{mine.length.toString().padStart(2, '0')}</b>
+              <small>as campaign creator</small>
+            </div>
+            <div>
+              <span>FUNDS IN ESCROW</span>
+              <b>{formatUnits(lockedAgency)} <i>USDC</i></b>
+              <small>across owned campaigns</small>
+            </div>
+          </>
+        )}
+        {hasKOL && (
+          <>
+            <div>
+              <span>CAMPAIGNS JOINED</span>
+              <b>{joined.length.toString().padStart(2, '0')}</b>
+              <small>active KOL participation</small>
+            </div>
+            <div>
+              <span>PENDING PAYOUT</span>
+              <b>{formatUnits(pendingKOL)} <i>USDC</i></b>
+              <small>USDC locked in active slots</small>
+            </div>
+            <div>
+              <span>TOTAL EARNED</span>
+              <b>{formatUnits(earnedKOL)} <i>USDC</i></b>
+              <small>settled payouts received</small>
+            </div>
+          </>
+        )}
+        {!hasAgency && !hasKOL && (
+          <>
+            <div>
+              <span>CAMPAIGNS</span>
+              <b>00</b>
+              <small>no active campaigns</small>
+            </div>
+            <div>
+              <span>TOTAL ESCROW</span>
+              <b>0.00 <i>USDC</i></b>
+              <small>0.00 USDC</small>
+            </div>
+            <div>
+              <span>NETWORK</span>
+              <b>MONAD</b>
+              <small>testnet · 10143</small>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="dashboard-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Agency campaigns section */}
+          {hasAgency && (
+            <section className="panel">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">Agency desk</span>
+                  <h2>Your active campaigns</h2>
+                </div>
+                <Button variant="quiet" to="/app/campaigns" icon={<ArrowRight size={15} />}>View all</Button>
+              </div>
+              <CampaignRows campaigns={mine} />
+            </section>
+          )}
+
+          {/* KOL campaigns section */}
+          {hasKOL && (
+            <section className="panel">
+              <div className="panel-heading">
+                <div>
+                  <span className="eyebrow">KOL desk</span>
+                  <h2>Joined campaigns</h2>
+                </div>
+                <Button variant="quiet" to="/app/campaigns" icon={<ArrowRight size={15} />}>Directory</Button>
+              </div>
+              <div className="campaign-rows">
+                {joined.map(c => {
+                  const s = c.slots.find(item => item.kol.toLowerCase() === acc && item.status !== 5)!
+                  return (
+                    <Link to={`/app/campaigns/${c.id}`} className="campaign-row" key={c.id}>
+                      <div className="campaign-index">/{String(c.id).padStart(2, '0')}</div>
+                      <div>
+                        <b>{c.title}</b>
+                        <span>Payout: {formatUnits(s.payout)} USDC · Status: {statusNames[s.status]}</span>
+                      </div>
+                      <div className="row-right">
+                        <span className={`pill ${statusClass[s.status] || 'open'}`}>
+                          {statusNames[s.status]}
+                        </span>
+                        <ArrowRight size={15} />
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
+          {!hasAgency && !hasKOL && (
+            <EmptyState 
+              title="Your workspace is empty" 
+              body="Create a campaign to lock budget and invite creators, or enter an invite code to join a campaign as a KOL." 
+              action={
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                  <Button to="/app/campaigns/new">Create campaign</Button>
+                  <Button to="/app/campaigns" variant="outline">Join campaign</Button>
+                </div>
+              } 
+            />
+          )}
+        </div>
+
+        <aside className="action-panel">
+          <span className="eyebrow">Quick start</span>
+          <h3>What needs doing?</h3>
+          <div className="quick-actions">
+            <Link to="/app/campaigns/new">
+              <Plus size={17} />
+              <span><b>Create a campaign</b><small>Lock a fixed budget</small></span>
+              <ArrowRight size={15} />
+            </Link>
+            <Link to="/app/campaigns">
+              <Clipboard size={17} />
+              <span><b>Find open work</b><small>Claim a KOL slot</small></span>
+              <ArrowRight size={15} />
+            </Link>
+            <button onClick={onRefresh}>
+              <RefreshCw size={17} />
+              <span><b>Refresh chain state</b><small>Read current events</small></span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </aside>
+      </div>
+    </>
+  )
 }
 
 function CampaignRows({ campaigns }: { campaigns: Campaign[] }) { return <div className="campaign-rows">{campaigns.map(c => <Link to={`/app/campaigns/${c.id}`} className="campaign-row" key={c.id}><div className="campaign-index">/{String(c.id).padStart(2, '0')}</div><div><b>{c.title}</b><span>{Number(c.joined)} / {Number(c.maxSlots)} slots · {formatUnits(c.paid)} paid</span></div><div className="row-right"><span className={`pill ${isPast(c.deadline) ? 'closed' : 'green'}`}>{isPast(c.deadline) ? 'closed' : 'live'}</span><ArrowRight size={15} /></div></Link>)}</div> }
