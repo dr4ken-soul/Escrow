@@ -90,6 +90,39 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.wallet-balances {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.6rem;
+}
+.balance-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--bg-primary);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+}
+.balance-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.balance-value {
+  font-size: 0.76rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .sidebar-wallet-card .card-footer {
   display: flex;
   justify-content: space-between;
